@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FiUsers, FiUserPlus, FiTrash2, FiAlertTriangle, FiRefreshCw } from 'react-icons/fi';
 import volunteerService, { Volunteer } from '@/utils/volunteerService';
 import { TableSkeleton } from '@/components/skeletons/table-skeleton';
+import { AxiosError } from 'axios';
 
 // Volunteer list component to display all volunteers
 export const VolunteerList = () => {
@@ -33,9 +34,10 @@ export const VolunteerList = () => {
             const data = await volunteerService.getVolunteers();
             setVolunteers(data);
             setError(null);
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Error fetching volunteers');
-            console.error('Failed to fetch volunteers', err);
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message?: string }>;
+            setError(error.response?.data?.message || 'Error fetching volunteers');
+            console.error('Failed to fetch volunteers', error);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -68,9 +70,10 @@ export const VolunteerList = () => {
 
             // Refresh volunteer list
             await fetchVolunteers();
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Error adding volunteer');
-            console.error('Failed to add volunteer', err);
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message?: string }>;
+            setError(error.response?.data?.message || 'Error adding volunteer');
+            console.error('Failed to add volunteer', error);
         } finally {
             setLoading(false);
         }
@@ -96,9 +99,10 @@ export const VolunteerList = () => {
 
             // Refresh volunteer list
             await fetchVolunteers();
-        } catch (err: any) {
-            setError(err.response?.data?.message || 'Error deleting volunteer');
-            console.error('Failed to delete volunteer', err);
+        } catch (err: unknown) {
+            const error = err as AxiosError<{ message?: string }>;
+            setError(error.response?.data?.message || 'Error deleting volunteer');
+            console.error('Failed to delete volunteer', error);
         } finally {
             setLoading(false);
         }
