@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FiUsers, FiUserPlus, FiTrash2, FiAlertTriangle } from 'react-icons/fi';
+import { FiUsers, FiUserPlus, FiTrash2, FiAlertTriangle, FiRefreshCw } from 'react-icons/fi';
 import volunteerService, { Volunteer } from '@/utils/volunteerService';
+import { TableSkeleton } from '@/components/skeletons/table-skeleton';
 
 // Volunteer list component to display all volunteers
 export const VolunteerList = () => {
     const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -36,7 +38,14 @@ export const VolunteerList = () => {
             console.error('Failed to fetch volunteers', err);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
+    };
+
+    // Handle refresh button click
+    const handleRefresh = () => {
+        setRefreshing(true);
+        fetchVolunteers();
     };
 
     // Handle input change for new volunteer form
@@ -105,13 +114,23 @@ export const VolunteerList = () => {
                         Volunteer Team
                     </h2>
                 </div>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="px-4 py-2 rounded-md bg-theme-nature text-white hover:bg-theme-nature/90 dark:bg-theme-heart dark:hover:bg-theme-heart/90 transition-colors flex items-center gap-2"
-                >
-                    <FiUserPlus className="w-4 h-4" />
-                    <span>Add Volunteer</span>
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleRefresh}
+                        disabled={loading || refreshing}
+                        className="px-3 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        <FiRefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                        <span className="hidden sm:inline">Refresh</span>
+                    </button>
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="px-4 py-2 rounded-md bg-theme-nature text-white hover:bg-theme-nature/90 dark:bg-theme-heart dark:hover:bg-theme-heart/90 transition-colors flex items-center gap-2"
+                    >
+                        <FiUserPlus className="w-4 h-4" />
+                        <span>Add Volunteer</span>
+                    </button>
+                </div>
             </div>
 
             {/* Error message */}
@@ -125,89 +144,88 @@ export const VolunteerList = () => {
             )}
 
             {/* Loading state */}
-            {loading && volunteers.length === 0 && (
-                <div className="flex justify-center py-12">
-                    <div className="animate-spin w-8 h-8 border-4 border-primary-300 border-t-primary-600 rounded-full dark:border-gray-700 dark:border-t-theme-heart"></div>
-                </div>
-            )}
+            {(loading || refreshing) && <TableSkeleton rows={5} columns={5} showHeader={true} />}
 
             {/* Volunteers table */}
-            {!loading && volunteers.length === 0 ? (
+            {!loading && !refreshing && volunteers.length === 0 ? (
                 <div className="text-center py-12 border border-dashed border-gray-300 rounded-md dark:border-border-dark">
                     <p className="text-gray-500 dark:text-gray-400">
                         No volunteers found. Add your first volunteer to get started.
                     </p>
                 </div>
             ) : (
-                <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-300 dark:divide-border-dark">
-                        <thead className="bg-gray-50 dark:bg-card-dark/50">
-                            <tr>
-                                <th
-                                    scope="col"
-                                    className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
-                                >
-                                    Name
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
-                                >
-                                    Email
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
-                                >
-                                    Status
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
-                                >
-                                    Joined
-                                </th>
-                                <th scope="col" className="relative py-3.5 pl-3 pr-4">
-                                    <span className="sr-only">Actions</span>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 dark:divide-border-dark bg-white dark:bg-card-dark">
-                            {volunteers.map(volunteer => (
-                                <tr key={volunteer._id}>
-                                    <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white">
-                                        {volunteer.name}
-                                    </td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
-                                        {volunteer.email}
-                                    </td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm">
-                                        <span
-                                            className={`inline-flex rounded-full px-2 text-xs font-semibold ${
-                                                volunteer.status === 'active'
-                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                                            }`}
-                                        >
-                                            {volunteer.status}
-                                        </span>
-                                    </td>
-                                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
-                                        {new Date(volunteer.createdAt).toLocaleDateString()}
-                                    </td>
-                                    <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium">
-                                        <button
-                                            onClick={() => confirmDelete(volunteer)}
-                                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                        >
-                                            <FiTrash2 className="w-5 h-5" />
-                                        </button>
-                                    </td>
+                !loading &&
+                !refreshing && (
+                    <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-300 dark:divide-border-dark">
+                            <thead className="bg-gray-50 dark:bg-card-dark/50">
+                                <tr>
+                                    <th
+                                        scope="col"
+                                        className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                    >
+                                        Name
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                    >
+                                        Email
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                    >
+                                        Status
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                    >
+                                        Joined
+                                    </th>
+                                    <th scope="col" className="relative py-3.5 pl-3 pr-4">
+                                        <span className="sr-only">Actions</span>
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 dark:divide-border-dark bg-white dark:bg-card-dark">
+                                {volunteers.map(volunteer => (
+                                    <tr key={volunteer._id}>
+                                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white">
+                                            {volunteer.name}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
+                                            {volunteer.email}
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                            <span
+                                                className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                                                    volunteer.status === 'active'
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                                                }`}
+                                            >
+                                                {volunteer.status}
+                                            </span>
+                                        </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
+                                            {new Date(volunteer.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium">
+                                            <button
+                                                onClick={() => confirmDelete(volunteer)}
+                                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                            >
+                                                <FiTrash2 className="w-5 h-5" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )
             )}
 
             {/* Add Volunteer Modal */}

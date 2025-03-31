@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import volunteerService from '@/utils/volunteerService';
+import { DashboardSkeleton } from '@/components/skeletons/dashboard-skeleton';
 
 // Define all NGO routes for prefetching
 const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers', '/animals'];
@@ -93,6 +94,15 @@ export default function DashboardPage() {
         [router]
     );
 
+    // If loading, show skeleton
+    if (loading) {
+        return (
+            <ProtectedRoute type="ngo">
+                <DashboardSkeleton />
+            </ProtectedRoute>
+        );
+    }
+
     return (
         <ProtectedRoute type="ngo">
             <div className="space-y-8">
@@ -117,7 +127,7 @@ export default function DashboardPage() {
                         className="group relative transform transition-transform duration-150 hover:-translate-y-1 hover:cursor-pointer"
                     >
                         <div className="absolute inset-0 bg-gradient-to-r from-theme-nature to-primary-300 rounded-2xl blur opacity-20 group-hover:opacity-100 transition-opacity duration-150 dark:from-theme-heart dark:to-theme-heart/50" />
-                        <div className="relative p-6 rounded-2xl bg-white/80 backdrop-blur-sm dark:bg-gradient-to-br dark:from-card-dark dark:to-card-dark/90">
+                        <div className="card relative bg-white dark:bg-gradient-to-br dark:from-card-dark dark:to-card-dark/90">
                             <div className="flex items-center gap-4">
                                 <div className="p-2 rounded-xl bg-primary-50 text-primary-600 dark:bg-theme-heart/10 dark:text-theme-heart">
                                     <PiPawPrintFill className="w-6 h-6 transform transition-transform duration-150 group-hover:scale-110" />
@@ -151,7 +161,7 @@ export default function DashboardPage() {
                                         Active Volunteers
                                     </h2>
                                     <p className="mt-1 text-3xl font-bold text-secondary-600 dark:text-theme-paw">
-                                        {loading ? '...' : stats.volunteers}
+                                        {stats.volunteers}
                                     </p>
                                 </div>
                             </div>
