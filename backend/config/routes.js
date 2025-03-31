@@ -6,6 +6,7 @@ const setupRoutes = (app) => {
     app.use('/api/auth', require('../routes/authRoutes'));
     app.use('/api/admin', require('../routes/adminRoutes'));
     app.use('/api/ngo', require('../routes/ngoRoutes'));
+    app.use('/api/volunteers', require('../routes/volunteerRoutes'));
 
     // Apply fileUpload middleware only to upload routes
     app.use('/api/upload', fileUpload(fileUploadConfig), require('../routes/uploadRoutes'));
