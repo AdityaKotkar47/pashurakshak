@@ -22,7 +22,6 @@ const createApp = () => {
         origin: '*',
         credentials: true
     }));
-    console.log('CORS middleware initialized.')
 
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true, limit: '10mb' }));

@@ -2,16 +2,16 @@ const nodemailer = require('nodemailer');
 
 // Create Gmail transporter
 const gmailTransporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
+    },
+    tls: {
+        rejectUnauthorized: false
+    }
 });
 
 // Create backup transporter using ethereal.email
@@ -19,24 +19,24 @@ let backupTransporter = null;
 
 // Initialize backup email service
 async function initializeBackupTransporter() {
-  try {
-    // Generate test SMTP service account from ethereal.email
-    const testAccount = await nodemailer.createTestAccount();
+    try {
+        // Generate test SMTP service account from ethereal.email
+        const testAccount = await nodemailer.createTestAccount();
 
-    backupTransporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass
-      }
-    });
+        backupTransporter = nodemailer.createTransport({
+            host: 'smtp.ethereal.email',
+            port: 587,
+            secure: false,
+            auth: {
+                user: testAccount.user,
+                pass: testAccount.pass
+            }
+        });
 
-    console.log('Backup email service initialized');
-  } catch (error) {
-    console.error('Failed to initialize backup email service:', error);
-  }
+        console.log('Backup email service initialized');
+    } catch (error) {
+        console.error('Failed to initialize backup email service:', error);
+    }
 }
 
 // Initialize backup service
@@ -44,40 +44,40 @@ initializeBackupTransporter();
 
 // Send email with fallback
 async function sendEmail(options) {
-  try {
-    // Try Gmail first
-    const info = await gmailTransporter.sendMail(options);
-    console.log('Email sent via Gmail:', info.response);
-    return true;
-  } catch (error) {
-    console.error('Gmail send failed, trying backup service:', error);
-    
-    if (backupTransporter) {
-      try {
-        const info = await backupTransporter.sendMail(options);
-        console.log('Email sent via backup service:', info.response);
-        console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+    try {
+        // Try Gmail first
+        const info = await gmailTransporter.sendMail(options);
+        console.log('Email sent via Gmail:', info.response);
         return true;
-      } catch (backupError) {
-        console.error('Backup email service failed:', backupError);
+    } catch (error) {
+        console.error('Gmail send failed, trying backup service:', error);
+
+        if (backupTransporter) {
+            try {
+                const info = await backupTransporter.sendMail(options);
+                console.log('Email sent via backup service:', info.response);
+                console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+                return true;
+            } catch (backupError) {
+                console.error('Backup email service failed:', backupError);
+                return false;
+            }
+        }
         return false;
-      }
     }
-    return false;
-  }
 }
 
 // Send approval email with login credentials
 const sendApprovalEmail = async (email, password, ngoName) => {
-  const loginUrl = process.env.FRONTEND_URL 
-    ? `${process.env.FRONTEND_URL}/login` 
-    : 'http://localhost:3000/login';
+    const loginUrl = process.env.FRONTEND_URL
+        ? `${process.env.FRONTEND_URL}/login`
+        : 'http://localhost:3000/login';
 
-  const mailOptions = {
-    from: '"Pashurakshak Admin" <sih.pravaah@gmail.com>',
-    to: email,
-    subject: '🎉 NGO Registration Approved - Pashurakshak',
-    html: `
+    const mailOptions = {
+        from: '"Pashurakshak Admin" <sih.pravaah@gmail.com>',
+        to: email,
+        subject: '🎉 NGO Registration Approved - Pashurakshak',
+        html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h1 style="color: #28a745; text-align: center;">Congratulations! 🎊</h1>
         <h2 style="color: #333; text-align: center;">Your NGO Registration is Approved</h2>
@@ -106,18 +106,18 @@ const sendApprovalEmail = async (email, password, ngoName) => {
         </div>
       </div>
     `
-  };
+    };
 
-  return await sendEmail(mailOptions);
+    return await sendEmail(mailOptions);
 };
 
 // Send rejection email
 const sendRejectionEmail = async (email, ngoName) => {
-  const mailOptions = {
-    from: '"Pashurakshak Admin" <sih.pravaah@gmail.com>',
-    to: email,
-    subject: '❌ NGO Registration Status Update - Pashurakshak',
-    html: `
+    const mailOptions = {
+        from: '"Pashurakshak Admin" <sih.pravaah@gmail.com>',
+        to: email,
+        subject: '❌ NGO Registration Status Update - Pashurakshak',
+        html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #dc3545; text-align: center;">NGO Registration Update</h2>
         
@@ -145,18 +145,18 @@ const sendRejectionEmail = async (email, ngoName) => {
         </div>
       </div>
     `
-  };
+    };
 
-  return await sendEmail(mailOptions);
+    return await sendEmail(mailOptions);
 };
 
 // Send status update email
 const sendStatusUpdateEmail = async (email, ngoName, status) => {
-  const mailOptions = {
-    from: '"Pashurakshak Admin" <sih.pravaah@gmail.com>',
-    to: email,
-    subject: `📝 NGO Status Update - ${status.toUpperCase()} - Pashurakshak`,
-    html: `
+    const mailOptions = {
+        from: '"Pashurakshak Admin" <sih.pravaah@gmail.com>',
+        to: email,
+        subject: `📝 NGO Status Update - ${status.toUpperCase()} - Pashurakshak`,
+        html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #0066cc; text-align: center;">NGO Status Update</h2>
         
@@ -174,18 +174,18 @@ const sendStatusUpdateEmail = async (email, ngoName, status) => {
         </div>
       </div>
     `
-  };
+    };
 
-  return await sendEmail(mailOptions);
+    return await sendEmail(mailOptions);
 };
 
 // Send registration confirmation email
 const sendRegistrationEmail = async (email, ngoName) => {
-  const mailOptions = {
-    from: '"Pashurakshak Admin" <sih.pravaah@gmail.com>',
-    to: email,
-    subject: '📋 NGO Registration Received - Pashurakshak',
-    html: `
+    const mailOptions = {
+        from: '"Pashurakshak Admin" <sih.pravaah@gmail.com>',
+        to: email,
+        subject: '📋 NGO Registration Received - Pashurakshak',
+        html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #0066cc; text-align: center;">Registration Confirmation</h2>
         
@@ -204,14 +204,56 @@ const sendRegistrationEmail = async (email, ngoName) => {
         </div>
       </div>
     `
-  };
+    };
 
-  return await sendEmail(mailOptions);
+    return await sendEmail(mailOptions);
+};
+
+// Send volunteer credentials email
+const sendVolunteerEmail = async (email, password, volunteerName, ngoName) => {
+    const mailOptions = {
+        from: '"Pashurakshak NGO" <sih.pravaah@gmail.com>',
+        to: email,
+        subject: '🐾 Welcome to Pashurakshak Volunteer Team!',
+        html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #28a745; text-align: center;">Welcome to the Team! 🎊</h1>
+        <h2 style="color: #333; text-align: center;">Pashurakshak Volunteer Registration</h2>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <p style="color: #333;">Dear <strong>${volunteerName}</strong>,</p>
+          <p style="color: #333;">You have been registered as a volunteer with <strong>${ngoName}</strong>. Thank you for joining our mission to help animals in need!</p>
+        </div>
+        
+        <div style="background-color: #e8f5e9; padding: 20px; border-radius: 5px; margin: 20px 0;">
+          <h3 style="color: #2e7d32; text-align: center;">Your Mobile App Credentials</h3>
+          <p style="color: #333; text-align: center;"><strong>Email:</strong> ${email}</p>
+          <p style="color: #333; text-align: center;"><strong>Password:</strong> ${password}</p>
+        </div>
+        
+        <div style="background-color: #fff3e0; padding: 15px; border-radius: 5px; margin: 20px 0;">
+          <p style="color: #e65100; margin: 0;"><strong>Important:</strong> Please change your password after your first login for security purposes.</p>
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+          <p style="background-color: #28a745; color: white; padding: 10px 20px; display: inline-block; border-radius: 5px;">Login to the Pashurakshak Mobile App</p>
+        </div>
+        
+        <div style="margin-top: 30px; text-align: center; color: #666;">
+          <p>Thank you for your dedication to animal welfare!</p>
+          <p>Best regards,<br><strong>${ngoName} Team</strong></p>
+        </div>
+      </div>
+    `
+    };
+
+    return await sendEmail(mailOptions);
 };
 
 module.exports = {
-  sendApprovalEmail,
-  sendRejectionEmail,
-  sendStatusUpdateEmail,
-  sendRegistrationEmail
+    sendApprovalEmail,
+    sendRejectionEmail,
+    sendStatusUpdateEmail,
+    sendRegistrationEmail,
+    sendVolunteerEmail
 }; 
