@@ -1,6 +1,8 @@
 'use client';
 
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { VolunteerList } from '@/components/ngo/volunteer/VolunteerList';
+import { FiInfo } from 'react-icons/fi';
 
 export default function VolunteersPage() {
     return (
@@ -12,22 +14,27 @@ export default function VolunteersPage() {
                     </h1>
                 </div>
 
+                {/* Info card */}
                 <div className="card dark:bg-gradient-to-br dark:from-card-dark dark:to-card-dark/90 hover-lift">
-                    <div className="flex flex-col gap-2">
-                        <h2 className="text-lg font-medium text-foreground dark:text-foreground-dark">
-                            Volunteer Management
-                        </h2>
-                        <p className="text-sm text-muted-foreground dark:text-foreground-dark/60">
-                            Here&apos;s where you&apos;ll manage all volunteer information.
-                        </p>
-                        <ul className="list-disc list-inside text-sm text-muted-foreground dark:text-foreground-dark/60 space-y-1 ml-4">
-                            <li>Manage volunteer profiles and availability</li>
-                            <li>Track volunteer experience and specialties</li>
-                            <li>Coordinate rescue teams</li>
-                            <li>Recognize outstanding contributions</li>
-                        </ul>
+                    <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                            <FiInfo className="w-5 h-5" />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <h2 className="text-lg font-medium text-foreground dark:text-foreground-dark">
+                                Volunteer Management
+                            </h2>
+                            <p className="text-sm text-muted-foreground dark:text-foreground-dark/60">
+                                Add, manage, and organize your rescue volunteer team. Once added,
+                                volunteers will receive an email with login credentials for the
+                                mobile app.
+                            </p>
+                        </div>
                     </div>
                 </div>
+
+                {/* Volunteer List Component */}
+                <VolunteerList />
             </div>
         </ProtectedRoute>
     );
