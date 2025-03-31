@@ -30,6 +30,14 @@ const volunteerSchema = new mongoose.Schema({
         enum: ['active', 'inactive'],
         default: 'active'
     },
+    activeRescues: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'RescueRequest'
+    }],
+    completedRescues: {
+        type: Number,
+        default: 0
+    },
     createdAt: {
         type: Date,
         default: Date.now

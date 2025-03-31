@@ -10,6 +10,8 @@ This roadmap outlines a systematic approach to implementing a complete animal re
 -   Basic NGO registration and approval system exists
 -   Frontend dashboard shells for NGO admin portal
 -   Backend API foundation established
+-   **Volunteer management system is implemented** ✅
+-   **Volunteer login API for mobile app is implemented** ✅
 
 ## Implementation Phases
 
@@ -133,60 +135,36 @@ This roadmap outlines a systematic approach to implementing a complete animal re
     );
     ```
 
--   **Volunteer Model**
+-   **Volunteer Model** ✅ (Implemented)
     ```javascript
     const volunteerSchema = new mongoose.Schema(
         {
             name: {
                 type: String,
-                required: [true, 'Name is required'],
+                required: [true, 'Please provide volunteer name'],
                 trim: true,
             },
             email: {
                 type: String,
-                required: [true, 'Email is required'],
+                required: [true, 'Please provide email'],
                 unique: true,
                 lowercase: true,
                 trim: true,
             },
-            phone: {
+            password: {
                 type: String,
-                required: [true, 'Phone number is required'],
-                trim: true,
+                required: [true, 'Please provide password'],
+                minlength: 6,
+                select: false,
             },
-            ngoId: {
+            ngo: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Ngo',
-                required: true,
-            },
-            address: {
-                street: String,
-                city: String,
-                state: String,
-                pincode: String,
-            },
-            specializations: [
-                {
-                    type: String,
-                    enum: [
-                        'Dog Handling',
-                        'Cat Handling',
-                        'Bird Rescue',
-                        'Wildlife Rescue',
-                        'First Aid',
-                        'Transportation',
-                        'General',
-                    ],
-                },
-            ],
-            availability: {
-                type: String,
-                enum: ['Full-time', 'Part-time', 'Weekends', 'On-call'],
-                default: 'On-call',
+                required: [true, 'Volunteer must belong to an NGO'],
             },
             status: {
                 type: String,
-                enum: ['active', 'inactive', 'on_leave'],
+                enum: ['active', 'inactive'],
                 default: 'active',
             },
             activeRescues: [
@@ -198,11 +176,6 @@ This roadmap outlines a systematic approach to implementing a complete animal re
             completedRescues: {
                 type: Number,
                 default: 0,
-            },
-            emergencyContact: {
-                name: String,
-                relation: String,
-                phone: String,
             },
             createdAt: {
                 type: Date,
@@ -225,12 +198,11 @@ This roadmap outlines a systematic approach to implementing a complete animal re
     -   `PUT /api/rescue/requests/:id/accept` - NGO accepts a rescue request
     -   `PUT /api/rescue/requests/:id/status` - Update rescue request status
 
--   **Volunteer Management Routes**
-    -   `POST /api/ngo/volunteers` - Add a new volunteer
-    -   `GET /api/ngo/volunteers` - Get all volunteers for an NGO
-    -   `GET /api/ngo/volunteers/:id` - Get volunteer details
-    -   `PUT /api/ngo/volunteers/:id` - Update volunteer information
-    -   `DELETE /api/ngo/volunteers/:id` - Remove a volunteer
+-   **Volunteer Management Routes** ✅ (Implemented)
+    -   `POST /api/volunteers/add` - Add a new volunteer
+    -   `GET /api/volunteers` - Get all volunteers for an NGO
+    -   `DELETE /api/volunteers/remove/:volunteerId` - Remove a volunteer
+    -   `POST /api/volunteers/login` - Volunteer login for mobile app
 
 ### Phase 2: NGO Admin Portal Development (Week 2)
 
@@ -241,12 +213,11 @@ This roadmap outlines a systematic approach to implementing a complete animal re
 -   Create request management interface (accept/assign buttons)
 -   Add search and sort functionalities
 
-#### 2.2 Volunteer Management Interface
+#### 2.2 Volunteer Management Interface ✅ (Implemented)
 
 -   Create volunteer registration form
 -   Build volunteer list view with status indicators
--   Implement volunteer detail view with history
--   Create volunteer assignment interface for rescue requests
+-   Create volunteer assignment interface for rescue requests (Next up)
 
 #### 2.3 Rescue Progress Tracking
 
@@ -260,7 +231,7 @@ This roadmap outlines a systematic approach to implementing a complete animal re
 
 -   Volunteer mobile app endpoints
 
-    -   `POST /api/volunteer/auth/login` - Volunteer login
+    -   `POST /api/volunteers/login` - Volunteer login ✅ (Implemented)
     -   `GET /api/volunteer/profile` - Get volunteer profile
     -   `GET /api/volunteer/missions` - Get assigned rescue missions
     -   `PUT /api/volunteer/missions/:id/status` - Update mission status
@@ -316,11 +287,18 @@ This roadmap outlines a systematic approach to implementing a complete animal re
 -   Deploy updated frontend to Vercel
 -   Configure monitoring and alerts
 
+## Next Steps (Immediate Tasks)
+
+1. Implement RescueRequest model and API endpoints
+2. Create rescue request list and detail views in NGO portal
+3. Implement volunteer assignment to rescue requests
+4. Add rescue progress tracking functionality
+
 ## Implementation Priorities
 
 1. Focus first on core rescue request functionality
 2. Prioritize NGO admin features needed for rescue coordination
-3. Then implement volunteer management system
+3. Then implement volunteer management system ✅ (Completed)
 4. Finally enhance with real-time updates
 
 ## Technical Considerations

@@ -4,8 +4,12 @@ const { protect, restrictTo } = require('../middleware/authMiddleware');
 const {
     addVolunteer,
     getVolunteers,
-    deleteVolunteer
+    deleteVolunteer,
+    loginVolunteer
 } = require('../controllers/volunteerController');
+
+// Public route for volunteer login
+router.post('/login', loginVolunteer);
 
 // NGO-only routes
 router.use(protect);

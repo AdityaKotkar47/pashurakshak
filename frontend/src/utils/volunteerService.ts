@@ -10,6 +10,8 @@ export interface Volunteer {
     email: string;
     status: 'active' | 'inactive';
     ngo: string;
+    activeRescues: string[];
+    completedRescues: number;
     createdAt: string;
     updatedAt: string;
 }

@@ -188,6 +188,12 @@ export const VolunteerList = () => {
                                     >
                                         Joined
                                     </th>
+                                    <th
+                                        scope="col"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                    >
+                                        Rescues
+                                    </th>
                                     <th scope="col" className="relative py-3.5 pl-3 pr-4">
                                         <span className="sr-only">Actions</span>
                                     </th>
@@ -216,6 +222,16 @@ export const VolunteerList = () => {
                                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-300">
                                             {new Date(volunteer.createdAt).toLocaleDateString()}
                                         </td>
+                                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                                            <div className="flex flex-col">
+                                                <span className="text-primary-600 dark:text-theme-nature">
+                                                    {volunteer.activeRescues?.length || 0} Active
+                                                </span>
+                                                <span className="text-theme-heart dark:text-theme-heart">
+                                                    {volunteer.completedRescues || 0} Completed
+                                                </span>
+                                            </div>
+                                        </td>
                                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium">
                                             <button
                                                 onClick={() => confirmDelete(volunteer)}
@@ -234,7 +250,7 @@ export const VolunteerList = () => {
 
             {/* Add Volunteer Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-60 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-card-dark rounded-lg shadow-xl max-w-md w-full p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -310,7 +326,7 @@ export const VolunteerList = () => {
 
             {/* Delete Confirmation Modal */}
             {showDeleteModal && selectedVolunteer && (
-                <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-60 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-card-dark rounded-lg shadow-xl max-w-md w-full p-6">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-medium text-gray-900 dark:text-white">

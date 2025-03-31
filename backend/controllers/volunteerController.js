@@ -1,6 +1,71 @@
 const Volunteer = require('../models/Volunteer');
 const { sendVolunteerEmail } = require('../utils/emailService');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+
+// Generate JWT Token
+const generateToken = (id) => {
+    return jwt.sign({ id, role: 'volunteer' }, process.env.JWT_SECRET, {
+        expiresIn: '30d',
+    });
+};
+
+// Login volunteer
+exports.loginVolunteer = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Check if volunteer exists
+        const volunteer = await Volunteer.findOne({ email }).select('+password');
+
+        if (!volunteer) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
+            });
+        }
+
+        // Check if password matches
+        const isMatch = await volunteer.comparePassword(password);
+
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: 'Invalid credentials'
+            });
+        }
+
+        // Check if volunteer is active
+        if (volunteer.status !== 'active') {
+            return res.status(401).json({
+                success: false,
+                message: 'Your account is currently inactive. Please contact your NGO.'
+            });
+        }
+
+        const token = generateToken(volunteer._id);
+
+        // Remove password from response
+        const volunteerResponse = volunteer.toObject();
+        delete volunteerResponse.password;
+
+        res.status(200).json({
+            success: true,
+            message: 'Login successful',
+            data: {
+                token,
+                volunteer: volunteerResponse
+            }
+        });
+    } catch (error) {
+        console.error('Volunteer login error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error during login',
+            error: error.message
+        });
+    }
+};
 
 // Add a new volunteer
 exports.addVolunteer = async (req, res) => {
