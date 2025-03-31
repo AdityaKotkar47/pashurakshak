@@ -6,6 +6,7 @@ import { PiDogFill, PiPawPrintFill } from 'react-icons/pi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import volunteerService from '@/utils/volunteerService';
 
 // Define all NGO routes for prefetching
 const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers', '/animals'];
@@ -26,6 +27,7 @@ export default function DashboardPage() {
         animals: 0,
         completed: 0,
     });
+    const [loading, setLoading] = useState(true);
 
     // Optimized prefetching strategy with Next.js features
     useEffect(() => {
@@ -50,28 +52,35 @@ export default function DashboardPage() {
         };
 
         prefetchAllRoutes();
-
-        // Initialize data
-        setStats({
-            requests: 12,
-            volunteers: 8,
-            animals: 24,
-            completed: 6,
-        });
-
-        // In future: Replace with WebSocket/SSE connection
-        const interval = setInterval(() => {
-            // Simulate stats update
-            setStats(prev => ({
-                requests: prev.requests,
-                volunteers: prev.volunteers,
-                animals: prev.animals,
-                completed: prev.completed,
-            }));
-        }, 5000);
-
-        return () => clearInterval(interval);
+        fetchDashboardStats();
     }, [router]);
+
+    // Fetch dashboard statistics
+    const fetchDashboardStats = async () => {
+        setLoading(true);
+        try {
+            // Fetch real volunteer count
+            const volunteers = await volunteerService.getVolunteers();
+
+            setStats({
+                requests: 12, // Sample data
+                volunteers: volunteers.length,
+                animals: 24, // Sample data
+                completed: 6, // Sample data
+            });
+        } catch (error) {
+            console.error('Error fetching dashboard stats:', error);
+            // Fallback to sample data if API fails
+            setStats({
+                requests: 12,
+                volunteers: 0,
+                animals: 24,
+                completed: 6,
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Handle hover-based prefetching
     const handleHover = useCallback(
@@ -142,7 +151,7 @@ export default function DashboardPage() {
                                         Active Volunteers
                                     </h2>
                                     <p className="mt-1 text-3xl font-bold text-secondary-600 dark:text-theme-paw">
-                                        {stats.volunteers}
+                                        {loading ? '...' : stats.volunteers}
                                     </p>
                                 </div>
                             </div>
