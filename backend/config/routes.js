@@ -21,10 +21,19 @@ const setupRoutes = (app) => {
     app.use('/api/volunteers', volunteerRoutes);
     app.use('/api/volunteer', volunteerRoutes); // Support singular form for mobile app
     
-    app.use('/api/rescue', require('../routes/rescueRequestRoutes'));
+    // Mount rescue routes - ensure all paths work
+    const rescueRoutes = require('../routes/rescueRequestRoutes');
+    app.use('/api/rescue', rescueRoutes);
+    app.use('/api/rescue/requests', rescueRoutes); // Add this to handle direct request paths
 
     // Apply fileUpload middleware only to upload routes
     app.use('/api/upload', fileUpload(fileUploadConfig), require('../routes/uploadRoutes'));
+
+    // Debug middleware to log all requests
+    app.use((req, res, next) => {
+        console.log(`${req.method} ${req.path}`);
+        next();
+    });
 
     // 404 handler for undefined routes
     app.use((req, res) => {
