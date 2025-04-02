@@ -6,7 +6,11 @@ const RescueRequest = require('../models/RescueRequest');
 
 // Generate JWT Token
 const generateToken = (id) => {
-    return jwt.sign({ id, role: 'volunteer' }, process.env.JWT_SECRET, {
+    // Make sure we're using the same secret as in the auth middleware
+    console.log(`Generating token for volunteer ID: ${id}`);
+    const payload = { id, role: 'volunteer' };
+    console.log(`Token payload:`, JSON.stringify(payload));
+    return jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: '30d',
     });
 };
@@ -15,11 +19,13 @@ const generateToken = (id) => {
 exports.loginVolunteer = async (req, res) => {
     try {
         const { email, password } = req.body;
+        console.log(`Volunteer login attempt for: ${email}`);
 
         // Check if volunteer exists
         const volunteer = await Volunteer.findOne({ email }).select('+password');
 
         if (!volunteer) {
+            console.log(`No volunteer found with email: ${email}`);
             return res.status(401).json({
                 success: false,
                 message: 'Invalid credentials'
@@ -30,6 +36,7 @@ exports.loginVolunteer = async (req, res) => {
         const isMatch = await volunteer.comparePassword(password);
 
         if (!isMatch) {
+            console.log(`Password mismatch for volunteer: ${email}`);
             return res.status(401).json({
                 success: false,
                 message: 'Invalid credentials'
@@ -38,6 +45,7 @@ exports.loginVolunteer = async (req, res) => {
 
         // Check if volunteer is active
         if (volunteer.status !== 'active') {
+            console.log(`Inactive volunteer: ${email}`);
             return res.status(401).json({
                 success: false,
                 message: 'Your account is currently inactive. Please contact your NGO.'
@@ -45,6 +53,7 @@ exports.loginVolunteer = async (req, res) => {
         }
 
         const token = generateToken(volunteer._id);
+        console.log(`Generated token for volunteer: ${volunteer._id}, token: ${token.substring(0, 20)}...`);
 
         // Remove password from response
         const volunteerResponse = volunteer.toObject();

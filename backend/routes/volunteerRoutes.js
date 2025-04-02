@@ -18,8 +18,8 @@ router.post('/login', loginVolunteer);
 // Middleware to protect routes
 router.use(protect);
 
-// Volunteer-specific routes for mobile app
-// These routes require volunteer authentication
+// IMPORTANT: These routes can be accessed with either /api/volunteers/profile or /api/volunteer/profile
+// to maintain compatibility with both plural and singular forms
 router.get('/profile', restrictTo('volunteer'), getVolunteerProfile);
 router.get('/missions', restrictTo('volunteer'), getMissions);
 router.put('/missions/:id/status', restrictTo('volunteer'), updateMissionStatus);

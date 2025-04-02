@@ -6,7 +6,12 @@ const setupRoutes = (app) => {
     app.use('/api/auth', require('../routes/authRoutes'));
     app.use('/api/admin', require('../routes/adminRoutes'));
     app.use('/api/ngo', require('../routes/ngoRoutes'));
-    app.use('/api/volunteers', require('../routes/volunteerRoutes'));
+    
+    // Use the same volunteer routes for both plural and singular endpoints
+    const volunteerRoutes = require('../routes/volunteerRoutes');
+    app.use('/api/volunteers', volunteerRoutes);
+    app.use('/api/volunteer', volunteerRoutes); // Support singular form for mobile app
+    
     app.use('/api/rescue', require('../routes/rescueRequestRoutes'));
 
     // Apply fileUpload middleware only to upload routes
