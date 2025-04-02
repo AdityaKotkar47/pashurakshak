@@ -7,16 +7,22 @@ const Volunteer = require('../models/Volunteer');
 // Debug flag
 const DEBUG = process.env.NODE_ENV !== 'production' || process.env.DEBUG_AUTH === 'true';
 
+// Use a consistent secret (shortened version) across the application
+const getJwtSecret = () => {
+  // Use first 64 characters which is secure enough for HS256
+  return process.env.JWT_SECRET.substring(0, 64);
+};
+
 exports.protect = async (req, res, next) => {
   try {
     let token;
     if (DEBUG) console.log('Auth middleware: Checking for token');
-
+    
     // Enhanced token extraction
     if (req.headers.authorization) {
       // Handle both formats: "Bearer <token>" and just "<token>"
       if (req.headers.authorization.startsWith('Bearer ')) {
-      token = req.headers.authorization.split(' ')[1];
+        token = req.headers.authorization.split(' ')[1];
         if (DEBUG) console.log(`Auth middleware: Bearer token found: ${token ? token.substring(0, 15) + '...' : 'undefined'}`);
       } else {
         token = req.headers.authorization;
@@ -39,15 +45,17 @@ exports.protect = async (req, res, next) => {
     }
 
     try {
+      const secret = getJwtSecret();
       if (DEBUG) {
-        console.log(`Auth middleware: JWT_SECRET length: ${process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 'undefined'}`);
+        console.log(`Auth middleware: JWT_SECRET length used: ${secret.length}`);
         console.log(`Auth middleware: Token length: ${token.length}`);
       }
       
       // Add token verification
       let decoded;
       try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Use the same algorithm (HS256) explicitly for verification
+        decoded = jwt.verify(token, secret, { algorithms: ['HS256'] });
         if (DEBUG) console.log(`Auth middleware: Token verified successfully`);
       } catch (jwtError) {
         // If verification fails, try to decode anyway to check if token is well-formed
@@ -66,7 +74,7 @@ exports.protect = async (req, res, next) => {
         if (req.originalUrl.includes('/m-')) {
           if (DEBUG) console.log(`Auth middleware: Mobile endpoint detected, checking if token is recoverable`);
           
-          if (decodedWithoutVerify && (decodedWithoutVerify._id || decodedWithoutVerify.id)) {
+          if (decodedWithoutVerify && (decodedWithoutVerify.id)) {
             if (DEBUG) console.log(`Auth middleware: Mobile endpoint - attempting to recover from token`);
             decoded = decodedWithoutVerify;
           }
@@ -84,8 +92,8 @@ exports.protect = async (req, res, next) => {
       
       if (DEBUG) console.log(`Auth middleware: Decoded token:`, JSON.stringify(decoded));
       
-      // Use either _id or id from the token
-      const userId = decoded._id || decoded.id;
+      // Simplified token structure - only using 'id' field
+      const userId = decoded.id;
       if (!userId) {
         if (DEBUG) console.log('Auth middleware: No user ID found in token');
         return res.status(401).json({
@@ -123,7 +131,7 @@ exports.protect = async (req, res, next) => {
             if (DEBUG) console.log(`Auth middleware: Mobile endpoint - volunteer found: ${volunteer.name}`);
             req.user = volunteer;
             req.userType = 'volunteer';
-        return next();
+            return next();
           }
         } catch (error) {
           if (DEBUG) console.error(`Auth middleware: Mobile endpoint - error finding volunteer:`, error);
@@ -175,11 +183,11 @@ exports.protect = async (req, res, next) => {
         try {
           if (DEBUG) console.log(`Auth middleware: Checking for NGO with ID: ${userId}`);
           const ngo = await Ngo.findById(userId);
-      if (ngo) {
+          if (ngo) {
             if (DEBUG) console.log(`Auth middleware: NGO found: ${ngo.name}`);
-        req.user = ngo;
-        req.userType = 'ngo';
-        return next();
+            req.user = ngo;
+            req.userType = 'ngo';
+            return next();
           } else {
             if (DEBUG) console.log(`Auth middleware: No NGO found with ID: ${userId}`);
           }

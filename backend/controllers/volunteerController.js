@@ -15,10 +15,10 @@ const generateToken = (id) => {
     const idStr = id.toString();
     console.log(`ID string: ${idStr}, length: ${idStr.length}`);
     
-    // Use consistent field name '_id' instead of 'id' to match document fields
+    // IMPORTANT: Use a consistent payload structure
+    // Simplify payload to reduce token size and potential issues
     const payload = { 
-        _id: idStr, 
-        id: idStr, 
+        id: idStr,  // Use 'id' as primary identifier  
         role: 'volunteer',
         timestamp: Date.now()
     };
@@ -30,9 +30,14 @@ const generateToken = (id) => {
         throw new Error('JWT_SECRET is not defined');
     }
     
-    console.log(`JWT_SECRET length: ${process.env.JWT_SECRET.length}`);
+    // Shorten JWT_SECRET to avoid issues with very long secrets
+    // Use first 64 characters which is secure enough for HS256
+    const secret = process.env.JWT_SECRET.substring(0, 64);
+    console.log(`Using JWT_SECRET length: ${secret.length}`);
     
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+    // Use HS256 algorithm explicitly 
+    const token = jwt.sign(payload, secret, {
+        algorithm: 'HS256',
         expiresIn: '30d',
     });
     

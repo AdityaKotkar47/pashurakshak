@@ -24,7 +24,9 @@ const createApp = () => {
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
         credentials: true,
-        maxAge: 86400 // 24 hours
+        maxAge: 86400, // 24 hours
+        preflightContinue: false,
+        optionsSuccessStatus: 204
     };
     
     // Middleware
@@ -36,9 +38,7 @@ const createApp = () => {
     // Enhanced security headers for Vercel deployment
     app.use((req, res, next) => {
         // Multiple bot detection bypass techniques
-        res.setHeader('X-Vercel-Bot-Detection-Bypass', 'true');
-        res.setHeader('X-Automated-Test', 'false');
-        res.setHeader('X-Mobile-App-Client', 'PashuRakshak/1.0');
+        res.setHeader('X-Vercel-Skip-Bot-Detection', 'true');
         
         // Security related headers
         res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -60,11 +60,12 @@ const createApp = () => {
         next();
     });
 
-    // Special handling for OPTIONS requests (preflight)
+    // Improved handling for OPTIONS requests (preflight)
     app.use((req, res, next) => {
         if (req.method === 'OPTIONS') {
-            console.log('Handling OPTIONS request');
-            return res.status(200).end();
+            console.log('Handling OPTIONS request for:', req.path);
+            // Return 204 No Content for OPTIONS preflight requests
+            return res.status(204).end();
         }
         next();
     });

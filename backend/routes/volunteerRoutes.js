@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const { protect, restrictTo } = require('../middleware/authMiddleware');
 const {
     addVolunteer,
@@ -11,6 +12,22 @@ const {
     updateMissionStatus,
     addMissionNotes
 } = require('../controllers/volunteerController');
+
+// Public test endpoint - no auth required
+router.get('/public-test', (req, res) => {
+    console.log('PUBLIC TEST: Reached the public test endpoint');
+    res.status(200).json({
+        success: true,
+        message: "Public API test successful",
+        timestamp: new Date().toISOString(),
+        headers: {
+            authorization: req.headers.authorization ? 'Present' : 'Absent',
+            contentType: req.headers['content-type'],
+            origin: req.headers.origin,
+            host: req.headers.host
+        }
+    });
+});
 
 // Simple test endpoint - no auth required
 router.get('/test', (req, res) => {
@@ -25,7 +42,7 @@ router.get('/test', (req, res) => {
 router.get('/token-info', (req, res) => {
     const token = req.headers.authorization && req.headers.authorization.startsWith('Bearer') 
         ? req.headers.authorization.split(' ')[1] 
-        : null;
+        : req.headers.authorization;
     
     if (!token) {
         return res.status(400).json({
@@ -36,7 +53,7 @@ router.get('/token-info', (req, res) => {
     
     try {
         // Just decode without verification to see what's in the token
-        const decoded = require('jsonwebtoken').decode(token);
+        const decoded = jwt.decode(token);
         res.status(200).json({
             success: true,
             message: "Token decoded (but not verified)",
@@ -57,6 +74,12 @@ router.get('/token-info', (req, res) => {
 
 // Public route for volunteer login
 router.post('/login', loginVolunteer);
+
+// Public route for direct mobile login
+router.post('/m-login', (req, res) => {
+    console.log('M-LOGIN: Using mobile-friendly login endpoint');
+    return loginVolunteer(req, res);
+});
 
 // Debug route to verify token - no role restriction
 router.get('/verify-token', protect, (req, res) => {
@@ -133,7 +156,6 @@ router.get('/debug-missions', protect, async (req, res) => {
 
 // Mobile-friendly version of all routes with m- prefix
 // This helps bypass Vercel security checkpoints for mobile apps
-router.post('/m-login', loginVolunteer);
 router.get('/m-profile', protect, (req, res) => {
     console.log('M-PROFILE: Using mobile-friendly profile endpoint');
     return getVolunteerProfile(req, res);

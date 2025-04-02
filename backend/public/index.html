@@ -1,76 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>PashuRakshak API Service</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 20px;
-      line-height: 1.6;
-      color: #333;
-    }
-    .container {
-      padding: 20px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    h1 {
-      color: #2d7b43;
-    }
-    code {
-      background: #f4f4f4;
-      padding: 3px 6px;
-      border-radius: 3px;
-      font-size: 0.9em;
-    }
-    .endpoint {
-      margin-bottom: 10px;
-      padding: 8px;
-      background: #f8f8f8;
-      border-left: 3px solid #2d7b43;
-    }
-    .online {
-      display: inline-block;
-      padding: 4px 8px;
-      background: #4CAF50;
-      color: white;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PashuRakshak API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .api-box {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .api-url {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            border-left: 3px solid #3498db;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        #test-result {
+            margin-top: 10px;
+            min-height: 50px;
+        }
+    </style>
 </head>
 <body>
-  <div class='container'>
-    <h1>PashuRakshak API Service</h1>
-    <p>This is the API service for the PashuRakshak animal rescue application.</p>
-    
-    <h2>Mobile App API Endpoints:</h2>
-    <div class="endpoint">
-      <p><strong>Test Connection:</strong></p>
-      <code>GET /api/volunteers/test</code>
+    <h1>PashuRakshak API</h1>
+    <div class="api-box">
+        <h2>API Status</h2>
+        <p>This is the base API for the PashuRakshak application. The API provides endpoints for animal rescue operations.</p>
+        <div class="api-url">
+            GET /api/volunteers/public-test
+        </div>
+        <button onclick="testApi()">Test API Connection</button>
+        <div id="test-result"></div>
     </div>
 
-    <div class="endpoint">
-      <p><strong>Volunteer Endpoints:</strong></p>
-      <code>POST /api/volunteers/m-login</code> - Login<br>
-      <code>GET /api/volunteers/m-profile</code> - Get profile<br>
-      <code>GET /api/volunteers/m-missions</code> - Get missions<br>
-      <code>PUT /api/volunteers/m-missions/:id/status</code> - Update mission status<br>
-      <code>POST /api/volunteers/m-missions/:id/notes</code> - Add notes
+    <div class="api-box">
+        <h2>Mobile-friendly Endpoints</h2>
+        <p>These endpoints are optimized for mobile applications with improved security handling:</p>
+        <ul>
+            <li><div class="api-url">POST /api/volunteers/m-login</div></li>
+            <li><div class="api-url">GET /api/volunteers/m-profile</div></li>
+            <li><div class="api-url">GET /api/volunteers/m-missions</div></li>
+        </ul>
     </div>
 
-    <div class="endpoint">
-      <p><strong>Rescue Request Endpoints:</strong></p>
-      <code>GET /api/rescue/m-requests/user/:userId</code> - Get user's requests<br>
-      <code>GET /api/rescue/m-requests/:id/timeline</code> - Get rescue timeline
+    <div class="api-box">
+        <h2>Debug Endpoints</h2>
+        <p>These endpoints can be used to troubleshoot authentication issues:</p>
+        <ul>
+            <li><div class="api-url">GET /api/volunteers/token-info</div></li>
+            <li><div class="api-url">GET /api/volunteers/verify-token</div></li>
+        </ul>
     </div>
-    
-    <p>API Status: <span class="online">Online</span></p>
-    <p><small>© 2023 PashuRakshak - Animal Rescue Platform</small></p>
-  </div>
+
+    <script>
+        async function testApi() {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.innerHTML = 'Testing connection...';
+            
+            try {
+                const response = await fetch('/api/volunteers/public-test');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <pre style="color: red">Error: ${error.message}</pre>
+                `;
+            }
+        }
+    </script>
 </body>
 </html> 
