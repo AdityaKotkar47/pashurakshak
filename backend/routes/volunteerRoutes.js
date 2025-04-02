@@ -13,6 +13,56 @@ const {
     addMissionNotes
 } = require('../controllers/volunteerController');
 
+// SPECIAL BYPASS: Direct profile access with no auth checks
+router.get('/direct-profile', (req, res) => {
+    console.log('DIRECT PROFILE: Using hardcoded profile with no auth checks');
+    // Return a dummy volunteer profile for testing
+    res.status(200).json({
+        success: true,
+        message: "Direct profile access successful - NO AUTH REQUIRED",
+        data: {
+            _id: "6460a45e3fec8c1e0b50431a",
+            name: "Test Volunteer",
+            email: "test@example.com",
+            status: "active",
+            completedRescues: 5,
+            ngo: {
+                _id: "6460a45e3fec8c1e0b504319",
+                name: "Test NGO"
+            },
+            activeRescues: []
+        }
+    });
+});
+
+// SPECIAL BYPASS: Direct missions access with no auth checks
+router.get('/direct-missions', (req, res) => {
+    console.log('DIRECT MISSIONS: Using hardcoded missions with no auth checks');
+    // Return dummy missions data for testing
+    res.status(200).json({
+        success: true,
+        message: "Direct missions access successful - NO AUTH REQUIRED",
+        data: [
+            {
+                _id: "6460a45e3fec8c1e0b50431b",
+                status: "assigned",
+                animal: "Dog",
+                location: "Test Location",
+                emergency: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                _id: "6460a45e3fec8c1e0b50431c",
+                status: "in_progress",
+                animal: "Cat",
+                location: "Another Location",
+                emergency: false,
+                createdAt: new Date().toISOString()
+            }
+        ]
+    });
+});
+
 // Public test endpoint - no auth required
 router.get('/public-test', (req, res) => {
     console.log('PUBLIC TEST: Reached the public test endpoint');

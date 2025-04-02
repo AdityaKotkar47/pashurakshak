@@ -72,6 +72,22 @@
     </div>
 
     <div class="api-box">
+        <h2>Direct Access Endpoints (No Auth Required)</h2>
+        <p>These special endpoints bypass all authentication for testing:</p>
+        <div class="api-url">
+            GET /api/volunteers/direct-profile
+        </div>
+        <button onclick="testDirectProfile()">Test Direct Profile</button>
+        <div id="direct-profile-result"></div>
+        
+        <div class="api-url" style="margin-top: 20px;">
+            GET /api/volunteers/direct-missions
+        </div>
+        <button onclick="testDirectMissions()">Test Direct Missions</button>
+        <div id="direct-missions-result"></div>
+    </div>
+
+    <div class="api-box">
         <h2>Mobile-friendly Endpoints</h2>
         <p>These endpoints are optimized for mobile applications with improved security handling:</p>
         <ul>
@@ -108,6 +124,35 @@
                 `;
             }
         }
-    </script>
-</body>
-</html> 
+
+        async function testDirectProfile() {
+            const resultDiv = document.getElementById('direct-profile-result');
+            resultDiv.innerHTML = 'Testing direct profile access...';
+            
+            try {
+                const response = await fetch('/api/volunteers/direct-profile');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <pre style="color: red">Error: ${error.message}</pre>
+                `;
+            }
+        }
+        
+        async function testDirectMissions() {
+            const resultDiv = document.getElementById('direct-missions-result');
+            resultDiv.innerHTML = 'Testing direct missions access...';
+            
+            try {
+                const response = await fetch('/api/volunteers/direct-missions');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `

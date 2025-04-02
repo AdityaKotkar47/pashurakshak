@@ -12,6 +12,24 @@
     ],
     "routes": [
         {
+            "src": "/api/volunteers/direct-profile",
+            "dest": "server.js",
+            "methods": ["GET"],
+            "continue": true
+        },
+        {
+            "src": "/api/volunteers/direct-missions",
+            "dest": "server.js",
+            "methods": ["GET"],
+            "continue": true
+        },
+        {
+            "src": "/api/volunteers/test",
+            "dest": "server.js",
+            "methods": ["GET"],
+            "continue": true
+        },
+        {
             "src": "/api/volunteers/public-test",
             "dest": "server.js",
             "methods": ["GET", "OPTIONS"],
