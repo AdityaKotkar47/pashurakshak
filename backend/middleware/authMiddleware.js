@@ -12,7 +12,7 @@ exports.protect = async (req, res, next) => {
 
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
       token = req.headers.authorization.split(' ')[1];
-      console.log(`Auth middleware: Token found: ${token ? token.substring(0, 15) + '...' : 'undefined'}`);
+      console.log(`Auth middleware: Token found in Authorization header: ${token ? token.substring(0, 15) + '...' : 'undefined'}`);
     } else if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
       console.log('Auth middleware: Token found in cookies');
@@ -56,116 +56,124 @@ exports.protect = async (req, res, next) => {
         });
       }
       
-      // Check for role in the JWT token for role-based authentication
-      if (decoded.role) {
-        console.log(`Auth middleware: Role found in token: ${decoded.role}`);
-        
-        if (decoded.role === 'volunteer') {
+      // Get role from token
+      const role = decoded.role;
+      console.log(`Auth middleware: Role from token: ${role || 'undefined'}`);
+      
+      // Simplify the flow - first try to find the user based on role
+      if (role === 'volunteer') {
+        // Special handling for volunteers
+        try {
           console.log(`Auth middleware: Checking for volunteer with ID: ${userId}`);
-          // Check if it's a volunteer
-          try {
-            const volunteer = await Volunteer.findById(userId).select('-password');
+          const volunteer = await Volunteer.findById(userId).select('-password');
+          
+          if (volunteer) {
+            console.log(`Auth middleware: Volunteer found: ${volunteer.name}, status: ${volunteer.status}`);
             
-            if (volunteer) {
-              console.log(`Auth middleware: Volunteer found: ${volunteer.name}`);
-              
-              if (volunteer.status !== 'active') {
-                console.log(`Auth middleware: Volunteer not active: ${volunteer.status}`);
-                return res.status(403).json({
-                  success: false,
-                  message: 'Your account is inactive. Please contact your NGO.'
-                });
-              }
-              
-              req.user = volunteer;
-              req.userType = 'volunteer';
-              console.log(`Auth middleware: Setting userType to: volunteer`);
-              return next();
-            } else {
-              console.log(`Auth middleware: No volunteer found with ID: ${userId}`);
+            if (volunteer.status !== 'active') {
+              console.log(`Auth middleware: Volunteer not active: ${volunteer.status}`);
+              return res.status(403).json({
+                success: false,
+                message: 'Your account is inactive. Please contact your NGO.'
+              });
             }
-          } catch (error) {
-            console.error(`Auth middleware: Error finding volunteer:`, error);
+            
+            req.user = volunteer;
+            req.userType = 'volunteer';
+            console.log(`Auth middleware: Setting userType to: volunteer`);
+            return next();
+          } else {
+            console.log(`Auth middleware: No volunteer found with ID: ${userId}`);
           }
-        } else if (decoded.role === 'admin' || decoded.role === 'user') {
-          // Check if it's a user (admin or regular user)
+        } catch (error) {
+          console.error(`Auth middleware: Error finding volunteer:`, error);
+        }
+      } else if (role === 'admin' || role === 'user') {
+        // Regular user or admin
+        try {
           console.log(`Auth middleware: Checking for user with ID: ${userId}`);
-          try {
-            const user = await User.findById(userId);
-            if (user) {
-              console.log(`Auth middleware: User found: ${user.name}, role: ${user.role}`);
-              req.user = user;
-              req.userType = user.role;
-              return next();
-            } else {
-              console.log(`Auth middleware: No user found with ID: ${userId}`);
-            }
-          } catch (error) {
-            console.error(`Auth middleware: Error finding user:`, error);
+          const user = await User.findById(userId);
+          if (user) {
+            console.log(`Auth middleware: User found: ${user.name}, role: ${user.role}`);
+            req.user = user;
+            req.userType = user.role;
+            return next();
+          } else {
+            console.log(`Auth middleware: No user found with ID: ${userId}`);
           }
-        } else if (decoded.role === 'ngo') {
-          // Check if it's an NGO
+        } catch (error) {
+          console.error(`Auth middleware: Error finding user:`, error);
+        }
+      } else if (role === 'ngo') {
+        // NGO
+        try {
           console.log(`Auth middleware: Checking for NGO with ID: ${userId}`);
-          try {
-            const ngo = await Ngo.findById(userId);
-            if (ngo) {
-              console.log(`Auth middleware: NGO found: ${ngo.name}`);
-              req.user = ngo;
-              req.userType = 'ngo';
-              return next();
-            } else {
-              console.log(`Auth middleware: No NGO found with ID: ${userId}`);
-            }
-          } catch (error) {
-            console.error(`Auth middleware: Error finding NGO:`, error);
+          const ngo = await Ngo.findById(userId);
+          if (ngo) {
+            console.log(`Auth middleware: NGO found: ${ngo.name}`);
+            req.user = ngo;
+            req.userType = 'ngo';
+            return next();
+          } else {
+            console.log(`Auth middleware: No NGO found with ID: ${userId}`);
           }
+        } catch (error) {
+          console.error(`Auth middleware: Error finding NGO:`, error);
         }
-      } else {
-        console.log(`Auth middleware: No role found in token`);
       }
       
-      // If no role specified or not found with role, try legacy checks
-      console.log(`Auth middleware: Trying legacy checks`);
+      // If we couldn't find the user based on role or no role was provided,
+      // try to find by ID in all collections as a fallback
+      console.log(`Auth middleware: Trying to find user in all collections`);
       
-      // First check if it's an admin user
+      // Try volunteer first (most common for this application)
       try {
-        const adminUser = await User.findById(userId);
-        if (adminUser) {
-          console.log(`Auth middleware: Admin user found: ${adminUser.name}`);
-          req.user = adminUser;
-          req.userType = adminUser.role; // 'admin' or 'user'
-          return next();
-        }
-      } catch (error) {
-        console.error(`Auth middleware: Error finding admin user:`, error);
-      }
-
-      // If not admin, check NGO
-      try {
-        const ngo = await Ngo.findById(userId);
-        if (ngo) {
-          console.log(`Auth middleware: NGO found: ${ngo.name}`);
-          req.user = ngo;
-          req.userType = 'ngo';
-          return next();
-        }
-      } catch (error) {
-        console.error(`Auth middleware: Error finding NGO:`, error);
-      }
-      
-      // Finally check volunteer
-      try {
-        const volunteer = await Volunteer.findById(userId);
+        const volunteer = await Volunteer.findById(userId).select('-password');
         if (volunteer) {
-          console.log(`Auth middleware: Volunteer found in legacy check: ${volunteer.name}`);
+          console.log(`Auth middleware: Volunteer found in fallback search: ${volunteer.name}`);
+          
+          if (volunteer.status !== 'active') {
+            console.log(`Auth middleware: Volunteer not active: ${volunteer.status}`);
+            return res.status(403).json({
+              success: false,
+              message: 'Your account is inactive. Please contact your NGO.'
+            });
+          }
+          
           req.user = volunteer;
           req.userType = 'volunteer';
           return next();
         }
       } catch (error) {
-        console.error(`Auth middleware: Error finding volunteer in legacy check:`, error);
+        console.error(`Auth middleware: Error in fallback volunteer search:`, error);
       }
-
+      
+      // Try admin user
+      try {
+        const user = await User.findById(userId);
+        if (user) {
+          console.log(`Auth middleware: User found in fallback search: ${user.name}`);
+          req.user = user;
+          req.userType = user.role;
+          return next();
+        }
+      } catch (error) {
+        console.error(`Auth middleware: Error in fallback user search:`, error);
+      }
+      
+      // Try NGO
+      try {
+        const ngo = await Ngo.findById(userId);
+        if (ngo) {
+          console.log(`Auth middleware: NGO found in fallback search: ${ngo.name}`);
+          req.user = ngo;
+          req.userType = 'ngo';
+          return next();
+        }
+      } catch (error) {
+        console.error(`Auth middleware: Error in fallback NGO search:`, error);
+      }
+      
       console.log(`Auth middleware: User not found for token ID: ${userId}`);
       return res.status(401).json({
         success: false,

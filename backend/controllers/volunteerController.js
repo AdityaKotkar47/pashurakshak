@@ -3,6 +3,7 @@ const { sendVolunteerEmail } = require('../utils/emailService');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const RescueRequest = require('../models/RescueRequest');
+const mongoose = require('mongoose');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -244,36 +245,133 @@ exports.getVolunteerProfile = async (req, res) => {
 // Get assigned rescue missions for a volunteer
 exports.getMissions = async (req, res) => {
     try {
+        console.log(`--------------------------------------------------------`);
+        console.log(`GET MISSIONS: Starting request for volunteer missions`);
         const volunteerId = req.user._id;
-
-        const volunteer = await Volunteer.findById(volunteerId)
-            .select('-password')
-            .populate({
-                path: 'activeRescues',
-                populate: [
-                    { path: 'userId', select: 'name' },
-                    { path: 'assignedTo.ngo', select: 'name' }
-                ]
+        console.log(`GET MISSIONS: Volunteer ID from request: ${volunteerId}`);
+        console.log(`GET MISSIONS: Volunteer user type: ${req.userType}`);
+        
+        // Add check for valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(volunteerId)) {
+            console.log(`GET MISSIONS: Invalid ObjectId: ${volunteerId}`);
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid volunteer ID format'
             });
+        }
+        
+        console.log(`GET MISSIONS: Finding volunteer in database`);
 
-        if (!volunteer) {
+        // First get the volunteer without populating activeRescues to check if they exist
+        const volunteerCheck = await Volunteer.findById(volunteerId).select('-password');
+        
+        if (!volunteerCheck) {
+            console.log(`GET MISSIONS: No volunteer found with ID: ${volunteerId}`);
             return res.status(404).json({
                 success: false,
                 message: 'Volunteer not found'
             });
         }
-
-        res.status(200).json({
-            success: true,
-            count: volunteer.activeRescues.length,
-            data: volunteer.activeRescues
-        });
+        
+        console.log(`GET MISSIONS: Found volunteer: ${volunteerCheck.name}`);
+        console.log(`GET MISSIONS: Active rescues IDs: ${JSON.stringify(volunteerCheck.activeRescues || [])}`);
+        
+        // Check if volunteer has any active rescue IDs stored
+        if (!volunteerCheck.activeRescues || volunteerCheck.activeRescues.length === 0) {
+            console.log(`GET MISSIONS: Volunteer has no active rescue missions in their record`);
+            return res.status(200).json({
+                success: true,
+                message: 'No active rescue missions found for this volunteer',
+                count: 0,
+                data: []
+            });
+        }
+        
+        // Now try to populate the missions
+        try {
+            console.log(`GET MISSIONS: Attempting to populate rescue missions`);
+            const volunteer = await Volunteer.findById(volunteerId)
+                .select('-password')
+                .populate({
+                    path: 'activeRescues',
+                    populate: [
+                        { path: 'userId', select: 'name' },
+                        { path: 'assignedTo.ngo', select: 'name' }
+                    ]
+                });
+                
+            console.log(`GET MISSIONS: Successfully populated missions`);
+            
+            // Guard against bad data in the populated result
+            if (!volunteer.activeRescues || !Array.isArray(volunteer.activeRescues)) {
+                console.log(`GET MISSIONS: Populated activeRescues is not an array or is missing`);
+                return res.status(200).json({
+                    success: true,
+                    message: 'No valid rescue missions found',
+                    count: 0,
+                    data: []
+                });
+            }
+            
+            // Filter out any null/undefined entries that might have come from bad references
+            const validMissions = volunteer.activeRescues.filter(mission => mission);
+            
+            if (validMissions.length === 0) {
+                console.log(`GET MISSIONS: No valid missions after filtering`);
+                return res.status(200).json({
+                    success: true,
+                    message: 'No valid rescue missions found after filtering',
+                    count: 0,
+                    data: []
+                });
+            }
+            
+            console.log(`GET MISSIONS: Returning ${validMissions.length} valid missions`);
+            
+            // Return the missions
+            return res.status(200).json({
+                success: true,
+                count: validMissions.length,
+                data: validMissions
+            });
+        } catch (populateError) {
+            console.error(`GET MISSIONS: Error populating missions:`, populateError);
+            // If population fails, try to get the raw missions by ID
+            
+            try {
+                console.log(`GET MISSIONS: Attempting direct rescue request lookup`);
+                const missionIds = volunteerCheck.activeRescues;
+                const missions = await RescueRequest.find({
+                    _id: { $in: missionIds }
+                });
+                
+                console.log(`GET MISSIONS: Direct lookup found ${missions.length} missions`);
+                
+                return res.status(200).json({
+                    success: true,
+                    message: 'Retrieved missions via direct lookup',
+                    count: missions.length,
+                    data: missions
+                });
+            } catch (directLookupError) {
+                console.error(`GET MISSIONS: Direct lookup also failed:`, directLookupError);
+                
+                // Return at least the IDs if nothing else works
+                return res.status(200).json({
+                    success: true,
+                    message: 'Could not populate missions, returning IDs only',
+                    count: volunteerCheck.activeRescues.length,
+                    data: volunteerCheck.activeRescues.map(id => ({ _id: id, rawId: true }))
+                });
+            }
+        }
     } catch (error) {
-        console.error('Get volunteer missions error:', error);
+        console.error('GET MISSIONS: Error fetching volunteer missions:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching volunteer missions',
-            error: error.message
+            error: error.message,
+            stack: error.stack
         });
     }
 };
