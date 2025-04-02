@@ -18,20 +18,59 @@ const fileUploadConfig = {
 const createApp = () => {
     const app = express();
 
+    // Enhanced CORS configuration for mobile apps
+    const corsOptions = {
+        origin: '*', // Allow all origins
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
+        credentials: true,
+        maxAge: 86400 // 24 hours
+    };
+    
     // Middleware
-    app.use(cors());
+    app.use(cors(corsOptions));
     app.use(express.json());
     app.use(express.urlencoded({ extended: false }));
     app.use(morgan('dev'));
 
-    // Serve static files
-    app.use(express.static(path.join(__dirname, '../public')));
-
-    // Add Vercel Bot detection bypass header
+    // Enhanced security headers for Vercel deployment
     app.use((req, res, next) => {
+        // Multiple bot detection bypass techniques
         res.setHeader('X-Vercel-Bot-Detection-Bypass', 'true');
+        res.setHeader('X-Automated-Test', 'false');
+        res.setHeader('X-Mobile-App-Client', 'PashuRakshak/1.0');
+        
+        // Security related headers
+        res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        res.setHeader('X-Frame-Options', 'DENY');
+        res.setHeader('X-XSS-Protection', '1; mode=block');
+        
+        // Ensure Access-Control headers are set for all responses
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        
+        // No cache for API responses
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        
         next();
     });
+
+    // Special handling for OPTIONS requests (preflight)
+    app.use((req, res, next) => {
+        if (req.method === 'OPTIONS') {
+            console.log('Handling OPTIONS request');
+            return res.status(200).end();
+        }
+        next();
+    });
+
+    // Serve static files
+    app.use(express.static(path.join(__dirname, '../public')));
 
     // Create /tmp directory if it doesn't exist
     const tmpDir = '/tmp';
@@ -45,7 +84,12 @@ const createApp = () => {
 
     // Basic route for API health check
     app.get('/', (req, res) => {
-        res.json({ message: 'API is running' });
+        res.json({ 
+            message: 'PashuRakshak API is running',
+            version: '1.0.0',
+            status: 'online',
+            timestamp: new Date().toISOString() 
+        });
     });
 
     // Error handling middleware
