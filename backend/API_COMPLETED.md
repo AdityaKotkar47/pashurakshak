@@ -586,6 +586,24 @@ http://localhost:5000
     }
     ```
 
+````
+- **Error Response**: Status 404
+  ```json
+  {
+    "success": false,
+    "message": "NGO not found"
+  }
+````
+
+OR Status 400
+
+```json
+{
+    "success": false,
+    "message": "NGO is already approved"
+}
+```
+
 ## NGO APIs
 
 ### Get NGO Profile
@@ -629,243 +647,27 @@ http://localhost:5000
     }
     ```
 
-## Rescue Request APIs
+````
+- **Error Response**: Status 401
+  ```json
+  {
+    "success": false,
+    "message": "Not authorized, no token"
+  }
+````
 
-### Create a New Rescue Request
+### Get NGO Status
 
--   **Endpoint**: `POST /api/rescue/request`
--   **Description**: Create a new animal rescue request
--   **Authentication**: Required (User)
--   **Content-Type**: `application/json`
--   **Headers**:
-    ```
-    Authorization: Bearer <user_token>
-    ```
--   **Request Body**:
-    ```json
-    {
-        "animalType": "Dog",
-        "animalDetails": {
-            "breed": "Labrador",
-            "color": "Golden",
-            "approximateAge": "2 years",
-            "condition": "Injured",
-            "specialNeeds": "Limping, possible fracture"
-        },
-        "location": {
-            "address": "123 Main Street",
-            "landmark": "Near Central Park",
-            "city": "Mumbai",
-            "state": "Maharashtra",
-            "pincode": "400001",
-            "coordinates": {
-                "latitude": 19.076,
-                "longitude": 72.8777
-            }
-        },
-        "images": [
-            {
-                "url": "https://res.cloudinary.com/dlwtrimk6/image/upload/v1234567890/pashurakshak/rescue/dog1.jpg",
-                "caption": "Injured dog"
-            }
-        ],
-        "emergency": true,
-        "contactInfo": {
-            "name": "John Doe",
-            "phone": "9876543210"
-        }
-    }
-    ```
--   **Success Response**: Status 201
-    ```json
-    {
-        "success": true,
-        "data": {
-            "_id": "60f7a9b8e6b3a3001c1e1234",
-            "userId": "60f7a7c4e6b3a3001c1e1111",
-            "animalType": "Dog",
-            "animalDetails": {
-                "breed": "Labrador",
-                "color": "Golden",
-                "approximateAge": "2 years",
-                "condition": "Injured",
-                "specialNeeds": "Limping, possible fracture"
-            },
-            "location": {
-                "address": "123 Main Street",
-                "landmark": "Near Central Park",
-                "city": "Mumbai",
-                "state": "Maharashtra",
-                "pincode": "400001",
-                "coordinates": {
-                    "latitude": 19.076,
-                    "longitude": 72.8777
-                }
-            },
-            "images": [
-                {
-                    "url": "https://res.cloudinary.com/dlwtrimk6/image/upload/v1234567890/pashurakshak/rescue/dog1.jpg",
-                    "caption": "Injured dog",
-                    "_id": "60f7a9b8e6b3a3001c1e1235"
-                }
-            ],
-            "status": "pending",
-            "emergency": true,
-            "contactInfo": {
-                "name": "John Doe",
-                "phone": "9876543210"
-            },
-            "rescueTimeline": [
-                {
-                    "status": "request_received",
-                    "timestamp": "2023-07-15T12:30:45.123Z",
-                    "notes": "Rescue request submitted by user",
-                    "_id": "60f7a9b8e6b3a3001c1e1236"
-                }
-            ],
-            "createdAt": "2023-07-15T12:30:45.123Z",
-            "updatedAt": "2023-07-15T12:30:45.123Z"
-        }
-    }
-    ```
--   **Error Response**: Status 400/500
-    ```json
-    {
-        "success": false,
-        "message": "Animal type is required"
-    }
-    ```
-
-### Get All Rescue Requests
-
--   **Endpoint**: `GET /api/rescue/requests`
--   **Description**: Get all rescue requests (filtered by user role)
--   **Authentication**: Required (User, NGO, Admin)
--   **Headers**:
-    ```
-    Authorization: Bearer <token>
-    ```
--   **Query Parameters**:
-    - `status`: Filter by status (pending, accepted, in_progress, completed, cancelled)
-    - `emergency`: Filter by emergency (true, false)
--   **Success Response**: Status 200
-    ```json
-    {
-        "success": true,
-        "count": 2,
-        "data": [
-            {
-                "_id": "60f7a9b8e6b3a3001c1e1234",
-                "userId": {
-                    "_id": "60f7a7c4e6b3a3001c1e1111",
-                    "name": "John Doe",
-                    "email": "john@example.com"
-                },
-                "animalType": "Dog",
-                "status": "pending",
-                "emergency": true,
-                "location": {
-                    "city": "Mumbai",
-                    "state": "Maharashtra"
-                },
-                "createdAt": "2023-07-15T12:30:45.123Z"
-            },
-            {
-                "_id": "60f7a9b8e6b3a3001c1e1237",
-                "userId": {
-                    "_id": "60f7a7c4e6b3a3001c1e1111",
-                    "name": "John Doe",
-                    "email": "john@example.com"
-                },
-                "animalType": "Cat",
-                "status": "accepted",
-                "emergency": false,
-                "location": {
-                    "city": "Delhi",
-                    "state": "Delhi"
-                },
-                "assignedTo": {
-                    "ngo": {
-                        "_id": "60f7a8c4e6b3a3001c1e2222",
-                        "name": "Animal Welfare NGO"
-                    },
-                    "assignedAt": "2023-07-15T14:30:45.123Z"
-                },
-                "createdAt": "2023-07-15T13:30:45.123Z"
-            }
-        ]
-    }
-    ```
--   **Error Response**: Status 401/500
-    ```json
-    {
-        "success": false,
-        "message": "Not authorized to access this route"
-    }
-    ```
-
-### Get Single Rescue Request
-
--   **Endpoint**: `GET /api/rescue/requests/:id`
--   **Description**: Get details of a specific rescue request
--   **Authentication**: Required (User, NGO, Admin)
--   **Headers**:
-    ```
-    Authorization: Bearer <token>
-    ```
+-   **Endpoint**: `GET /api/ngo/status/:id`
+-   **Description**: Check the status of an NGO registration using its ID
 -   **Success Response**: Status 200
     ```json
     {
         "success": true,
         "data": {
-            "_id": "60f7a9b8e6b3a3001c1e1234",
-            "userId": {
-                "_id": "60f7a7c4e6b3a3001c1e1111",
-                "name": "John Doe",
-                "email": "john@example.com"
-            },
-            "animalType": "Dog",
-            "animalDetails": {
-                "breed": "Labrador",
-                "color": "Golden",
-                "approximateAge": "2 years",
-                "condition": "Injured",
-                "specialNeeds": "Limping, possible fracture"
-            },
-            "location": {
-                "address": "123 Main Street",
-                "landmark": "Near Central Park",
-                "city": "Mumbai",
-                "state": "Maharashtra",
-                "pincode": "400001",
-                "coordinates": {
-                    "latitude": 19.076,
-                    "longitude": 72.8777
-                }
-            },
-            "images": [
-                {
-                    "url": "https://res.cloudinary.com/dlwtrimk6/image/upload/v1234567890/pashurakshak/rescue/dog1.jpg",
-                    "caption": "Injured dog",
-                    "_id": "60f7a9b8e6b3a3001c1e1235"
-                }
-            ],
+            "name": "Animal Welfare NGO",
             "status": "pending",
-            "emergency": true,
-            "contactInfo": {
-                "name": "John Doe",
-                "phone": "9876543210"
-            },
-            "rescueTimeline": [
-                {
-                    "status": "request_received",
-                    "timestamp": "2023-07-15T12:30:45.123Z",
-                    "notes": "Rescue request submitted by user",
-                    "_id": "60f7a9b8e6b3a3001c1e1236"
-                }
-            ],
-            "createdAt": "2023-07-15T12:30:45.123Z",
-            "updatedAt": "2023-07-15T12:30:45.123Z"
+            "createdAt": "2023-01-01T00:00:00.000Z"
         }
     }
     ```
@@ -873,114 +675,7 @@ http://localhost:5000
     ```json
     {
         "success": false,
-        "message": "Rescue request not found"
-    }
-    ```
-
-### Accept a Rescue Request
-
--   **Endpoint**: `PUT /api/rescue/requests/:id/accept`
--   **Description**: NGO accepts a rescue request
--   **Authentication**: Required (NGO only)
--   **Headers**:
-    ```
-    Authorization: Bearer <ngo_token>
-    ```
--   **Success Response**: Status 200
-    ```json
-    {
-        "success": true,
-        "data": {
-            "_id": "60f7a9b8e6b3a3001c1e1234",
-            "status": "accepted",
-            "assignedTo": {
-                "ngo": "60f7a8c4e6b3a3001c1e2222",
-                "assignedAt": "2023-07-15T15:30:45.123Z"
-            },
-            "rescueTimeline": [
-                {
-                    "status": "request_received",
-                    "timestamp": "2023-07-15T12:30:45.123Z",
-                    "notes": "Rescue request submitted by user",
-                    "_id": "60f7a9b8e6b3a3001c1e1236"
-                },
-                {
-                    "status": "ngo_assigned",
-                    "timestamp": "2023-07-15T15:30:45.123Z",
-                    "notes": "Rescue accepted by NGO: Animal Welfare NGO",
-                    "_id": "60f7a9b8e6b3a3001c1e1237"
-                }
-            ]
-        }
-    }
-    ```
--   **Error Response**: Status 400/404
-    ```json
-    {
-        "success": false,
-        "message": "Cannot accept rescue that is already accepted"
-    }
-    ```
-
-### Update Rescue Status
-
--   **Endpoint**: `PUT /api/rescue/requests/:id/status`
--   **Description**: Update the status of a rescue request
--   **Authentication**: Required (NGO only)
--   **Headers**:
-    ```
-    Authorization: Bearer <ngo_token>
-    Content-Type: application/json
-    ```
--   **Request Body**:
-    ```json
-    {
-        "status": "in_progress",
-        "notes": "Volunteer dispatched to location"
-    }
-    ```
--   **Success Response**: Status 200
-    ```json
-    {
-        "success": true,
-        "data": {
-            "_id": "60f7a9b8e6b3a3001c1e1234",
-            "status": "in_progress",
-            "rescueTimeline": [
-                {
-                    "status": "request_received",
-                    "timestamp": "2023-07-15T12:30:45.123Z",
-                    "notes": "Rescue request submitted by user",
-                    "_id": "60f7a9b8e6b3a3001c1e1236"
-                },
-                {
-                    "status": "ngo_assigned",
-                    "timestamp": "2023-07-15T15:30:45.123Z",
-                    "notes": "Rescue accepted by NGO: Animal Welfare NGO",
-                    "_id": "60f7a9b8e6b3a3001c1e1237"
-                },
-                {
-                    "status": "volunteer_dispatched",
-                    "timestamp": "2023-07-15T16:30:45.123Z",
-                    "notes": "Volunteer dispatched to location",
-                    "_id": "60f7a9b8e6b3a3001c1e1238"
-                }
-            ]
-        }
-    }
-    ```
--   **Error Response**: Status 400/404
-    ```json
-    {
-        "success": false,
-        "message": "Invalid status value"
-    }
-    ```
-    OR
-    ```json
-    {
-        "success": false,
-        "message": "Not authorized to update this rescue request"
+        "message": "NGO not found"
     }
     ```
 
