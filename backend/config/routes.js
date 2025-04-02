@@ -2,6 +2,15 @@ const { fileUploadConfig } = require('./app');
 const fileUpload = require('express-fileupload');
 
 const setupRoutes = (app) => {
+    // Basic health check route
+    app.get('/', (req, res) => {
+        res.status(200).json({
+            success: true,
+            message: 'PashuRakshak API is running',
+            timestamp: new Date().toISOString()
+        });
+    });
+
     // API Routes
     app.use('/api/auth', require('../routes/authRoutes'));
     app.use('/api/admin', require('../routes/adminRoutes'));

@@ -15,6 +15,21 @@ const {
 // Public route for volunteer login
 router.post('/login', loginVolunteer);
 
+// Debug route to verify token - no role restriction
+router.get('/verify-token', protect, (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Token is valid",
+        data: {
+            user: {
+                id: req.user._id,
+                name: req.user.name,
+                userType: req.userType
+            }
+        }
+    });
+});
+
 // Middleware to protect routes
 router.use(protect);
 

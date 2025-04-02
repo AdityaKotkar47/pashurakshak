@@ -8,7 +8,8 @@ const RescueRequest = require('../models/RescueRequest');
 const generateToken = (id) => {
     // Make sure we're using the same secret as in the auth middleware
     console.log(`Generating token for volunteer ID: ${id}`);
-    const payload = { id, role: 'volunteer' };
+    // Use consistent field name '_id' instead of 'id' to match document fields
+    const payload = { _id: id, id: id, role: 'volunteer' };
     console.log(`Token payload:`, JSON.stringify(payload));
     return jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: '30d',

@@ -26,14 +26,21 @@ exports.protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       console.log(`Auth middleware: Decoded token:`, JSON.stringify(decoded));
       
+      // Use either _id or id from the token
+      const userId = decoded._id || decoded.id;
+      if (!userId) {
+        console.log('Auth middleware: No user ID found in token');
+        throw new Error('Invalid token: No user ID');
+      }
+      
       // Check for role in the JWT token for role-based authentication
       if (decoded.role) {
         console.log(`Auth middleware: Role found in token: ${decoded.role}`);
         
         if (decoded.role === 'volunteer') {
-          console.log(`Auth middleware: Checking for volunteer with ID: ${decoded.id}`);
+          console.log(`Auth middleware: Checking for volunteer with ID: ${userId}`);
           // Check if it's a volunteer
-          const volunteer = await Volunteer.findById(decoded.id).select('-password');
+          const volunteer = await Volunteer.findById(userId).select('-password');
           
           if (volunteer) {
             console.log(`Auth middleware: Volunteer found: ${volunteer.name}`);
@@ -51,19 +58,19 @@ exports.protect = async (req, res, next) => {
             console.log(`Auth middleware: Setting userType to: volunteer`);
             return next();
           } else {
-            console.log(`Auth middleware: No volunteer found with ID: ${decoded.id}`);
+            console.log(`Auth middleware: No volunteer found with ID: ${userId}`);
           }
         } else if (decoded.role === 'admin' || decoded.role === 'user') {
           // Check if it's a user (admin or regular user)
-          console.log(`Auth middleware: Checking for user with ID: ${decoded.id}`);
-          const user = await User.findById(decoded.id);
+          console.log(`Auth middleware: Checking for user with ID: ${userId}`);
+          const user = await User.findById(userId);
           if (user) {
             console.log(`Auth middleware: User found: ${user.name}, role: ${user.role}`);
             req.user = user;
             req.userType = user.role;
             return next();
           } else {
-            console.log(`Auth middleware: No user found with ID: ${decoded.id}`);
+            console.log(`Auth middleware: No user found with ID: ${userId}`);
           }
         }
       } else {
@@ -74,7 +81,7 @@ exports.protect = async (req, res, next) => {
       console.log(`Auth middleware: Trying legacy checks`);
       
       // First check if it's an admin user
-      const adminUser = await User.findById(decoded.id);
+      const adminUser = await User.findById(userId);
       if (adminUser) {
         console.log(`Auth middleware: Admin user found: ${adminUser.name}`);
         req.user = adminUser;
@@ -83,7 +90,7 @@ exports.protect = async (req, res, next) => {
       }
 
       // If not admin, check NGO
-      const ngo = await Ngo.findById(decoded.id);
+      const ngo = await Ngo.findById(userId);
       if (ngo) {
         console.log(`Auth middleware: NGO found: ${ngo.name}`);
         req.user = ngo;
@@ -91,7 +98,7 @@ exports.protect = async (req, res, next) => {
         return next();
       }
 
-      console.log(`Auth middleware: User not found for token ID: ${decoded.id}`);
+      console.log(`Auth middleware: User not found for token ID: ${userId}`);
       throw new Error('User not found');
     } catch (err) {
       console.error(`Auth middleware: Token verification failed:`, err);
