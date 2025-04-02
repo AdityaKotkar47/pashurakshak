@@ -12,6 +12,49 @@ const {
     addMissionNotes
 } = require('../controllers/volunteerController');
 
+// Simple test endpoint - no auth required
+router.get('/test', (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Volunteer routes are working",
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Simple token info endpoint - only basic auth, no role restriction
+router.get('/token-info', (req, res) => {
+    const token = req.headers.authorization && req.headers.authorization.startsWith('Bearer') 
+        ? req.headers.authorization.split(' ')[1] 
+        : null;
+    
+    if (!token) {
+        return res.status(400).json({
+            success: false,
+            message: "No token provided in Authorization header"
+        });
+    }
+    
+    try {
+        // Just decode without verification to see what's in the token
+        const decoded = require('jsonwebtoken').decode(token);
+        res.status(200).json({
+            success: true,
+            message: "Token decoded (but not verified)",
+            token_info: {
+                header: decoded ? decoded.header : null,
+                payload: decoded,
+                token_parts: token.split('.').length
+            }
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: "Failed to decode token",
+            error: error.message
+        });
+    }
+});
+
 // Public route for volunteer login
 router.post('/login', loginVolunteer);
 

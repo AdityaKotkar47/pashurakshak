@@ -8,12 +8,35 @@ const RescueRequest = require('../models/RescueRequest');
 const generateToken = (id) => {
     // Make sure we're using the same secret as in the auth middleware
     console.log(`Generating token for volunteer ID: ${id}`);
+    console.log(`ID type: ${typeof id}`);
+    
+    // Convert to string if it's an ObjectId
+    const idStr = id.toString();
+    console.log(`ID string: ${idStr}, length: ${idStr.length}`);
+    
     // Use consistent field name '_id' instead of 'id' to match document fields
-    const payload = { _id: id, id: id, role: 'volunteer' };
+    const payload = { 
+        _id: idStr, 
+        id: idStr, 
+        role: 'volunteer',
+        timestamp: Date.now()
+    };
     console.log(`Token payload:`, JSON.stringify(payload));
-    return jwt.sign(payload, process.env.JWT_SECRET, {
+    
+    // Verify JWT_SECRET is available
+    if (!process.env.JWT_SECRET) {
+        console.error('JWT_SECRET is not defined in environment variables');
+        throw new Error('JWT_SECRET is not defined');
+    }
+    
+    console.log(`JWT_SECRET length: ${process.env.JWT_SECRET.length}`);
+    
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
         expiresIn: '30d',
     });
+    
+    console.log(`Generated token (first 30 chars): ${token.substring(0, 30)}...`);
+    return token;
 };
 
 // Login volunteer
@@ -53,8 +76,9 @@ exports.loginVolunteer = async (req, res) => {
             });
         }
 
+        console.log(`Volunteer found: ${volunteer.name}, ID: ${volunteer._id}`);
         const token = generateToken(volunteer._id);
-        console.log(`Generated token for volunteer: ${volunteer._id}, token: ${token.substring(0, 20)}...`);
+        console.log(`Generated token for volunteer: ${volunteer._id}, token length: ${token.length}`);
 
         // Remove password from response
         const volunteerResponse = volunteer.toObject();
