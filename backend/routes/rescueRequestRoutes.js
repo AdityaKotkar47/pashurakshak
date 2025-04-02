@@ -329,4 +329,202 @@ router.get('/m-requests/:id/timeline', protect, async (req, res) => {
     }
 });
 
+// PUT /api/rescue/requests/:id/assign-volunteer - Assign a volunteer to an accepted rescue request
+router.put('/requests/:id/assign-volunteer', protect, restrictTo('ngo', 'admin'), async (req, res) => {
+    try {
+        const { volunteerId } = req.body;
+        
+        if (!volunteerId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Volunteer ID is required'
+            });
+        }
+
+        const rescueRequest = await RescueRequest.findById(req.params.id);
+        
+        if (!rescueRequest) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Rescue request not found' 
+            });
+        }
+
+        // Ensure request has been accepted first
+        if (rescueRequest.status !== 'accepted') {
+            return res.status(400).json({
+                success: false,
+                message: 'Rescue request must be accepted before assigning a volunteer'
+            });
+        }
+
+        // Only the NGO that accepted the request or an admin can assign volunteers
+        if (rescueRequest.assignedTo.ngo && 
+            req.userType === 'ngo' && 
+            rescueRequest.assignedTo.ngo.toString() !== req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Only the assigned NGO or an admin can assign volunteers to this request'
+            });
+        }
+
+        // Check if volunteer exists and is active
+        const Volunteer = require('../models/Volunteer');
+        const volunteer = await Volunteer.findById(volunteerId);
+        
+        if (!volunteer) {
+            return res.status(404).json({
+                success: false,
+                message: 'Volunteer not found'
+            });
+        }
+
+        if (volunteer.status !== 'active') {
+            return res.status(400).json({
+                success: false,
+                message: 'Volunteer is not active'
+            });
+        }
+
+        // Update status to in_progress and assign volunteer
+        rescueRequest.status = 'in_progress';
+        rescueRequest.assignedTo.volunteer = volunteerId;
+        
+        // Add timeline entry
+        rescueRequest.rescueTimeline.push({
+            status: 'volunteer_assigned',
+            timestamp: Date.now(),
+            notes: `Volunteer ${volunteer.name} assigned to the rescue`
+        });
+
+        // Add the rescue to volunteer's active rescues
+        if (!volunteer.activeRescues.includes(rescueRequest._id)) {
+            volunteer.activeRescues.push(rescueRequest._id);
+            await volunteer.save();
+        }
+
+        await rescueRequest.save();
+        
+        res.json({
+            success: true,
+            message: 'Volunteer assigned successfully',
+            data: {
+                rescueId: rescueRequest._id,
+                volunteerId: volunteer._id,
+                volunteerName: volunteer.name,
+                status: rescueRequest.status
+            }
+        });
+    } catch (error) {
+        console.error('Error assigning volunteer:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while assigning volunteer',
+            error: error.message
+        });
+    }
+});
+
+// PUT /api/rescue/m-requests/:id/assign-volunteer - Mobile-friendly version to assign a volunteer
+router.put('/m-requests/:id/assign-volunteer', protect, async (req, res) => {
+    try {
+        console.log(`M-ASSIGN-VOLUNTEER: Using mobile-friendly volunteer assignment endpoint for request: ${req.params.id}`);
+        
+        const { volunteerId } = req.body;
+        
+        if (!volunteerId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Volunteer ID is required'
+            });
+        }
+
+        const rescueRequest = await RescueRequest.findById(req.params.id);
+        
+        if (!rescueRequest) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Rescue request not found' 
+            });
+        }
+
+        // For mobile endpoints, we're more permissive about the status
+        // Allow assigning from pending or accepted status
+        if (rescueRequest.status !== 'pending' && rescueRequest.status !== 'accepted') {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot assign volunteer to request with status: ${rescueRequest.status}`
+            });
+        }
+
+        // Check if volunteer exists and is active
+        const Volunteer = require('../models/Volunteer');
+        const volunteer = await Volunteer.findById(volunteerId);
+        
+        if (!volunteer) {
+            return res.status(404).json({
+                success: false,
+                message: 'Volunteer not found'
+            });
+        }
+
+        if (volunteer.status !== 'active') {
+            return res.status(400).json({
+                success: false,
+                message: 'Volunteer is not active'
+            });
+        }
+
+        // If request was pending, automatically accept it
+        if (rescueRequest.status === 'pending') {
+            rescueRequest.status = 'accepted';
+            rescueRequest.assignedTo.ngo = req.user._id;
+            rescueRequest.assignedTo.assignedAt = Date.now();
+            
+            rescueRequest.rescueTimeline.push({
+                status: 'ngo_assigned',
+                timestamp: Date.now(),
+                notes: `Request accepted by NGO/admin: ${req.user.name}`
+            });
+        }
+
+        // Update status to in_progress and assign volunteer
+        rescueRequest.status = 'in_progress';
+        rescueRequest.assignedTo.volunteer = volunteerId;
+        
+        // Add timeline entry
+        rescueRequest.rescueTimeline.push({
+            status: 'volunteer_assigned',
+            timestamp: Date.now(),
+            notes: `Volunteer ${volunteer.name} assigned to the rescue`
+        });
+
+        // Add the rescue to volunteer's active rescues
+        if (!volunteer.activeRescues.includes(rescueRequest._id)) {
+            volunteer.activeRescues.push(rescueRequest._id);
+            await volunteer.save();
+        }
+
+        await rescueRequest.save();
+        
+        res.json({
+            success: true,
+            message: 'Volunteer assigned successfully',
+            data: {
+                rescueId: rescueRequest._id,
+                volunteerId: volunteer._id,
+                volunteerName: volunteer.name,
+                status: rescueRequest.status
+            }
+        });
+    } catch (error) {
+        console.error('Error assigning volunteer (mobile):', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while assigning volunteer',
+            error: error.message
+        });
+    }
+});
+
 module.exports = router; 
