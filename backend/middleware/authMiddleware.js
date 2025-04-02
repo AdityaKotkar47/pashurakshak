@@ -11,12 +11,12 @@ exports.protect = async (req, res, next) => {
   try {
     let token;
     if (DEBUG) console.log('Auth middleware: Checking for token');
-    
+
     // Enhanced token extraction
     if (req.headers.authorization) {
       // Handle both formats: "Bearer <token>" and just "<token>"
       if (req.headers.authorization.startsWith('Bearer ')) {
-        token = req.headers.authorization.split(' ')[1];
+      token = req.headers.authorization.split(' ')[1];
         if (DEBUG) console.log(`Auth middleware: Bearer token found: ${token ? token.substring(0, 15) + '...' : 'undefined'}`);
       } else {
         token = req.headers.authorization;
@@ -123,7 +123,7 @@ exports.protect = async (req, res, next) => {
             if (DEBUG) console.log(`Auth middleware: Mobile endpoint - volunteer found: ${volunteer.name}`);
             req.user = volunteer;
             req.userType = 'volunteer';
-            return next();
+        return next();
           }
         } catch (error) {
           if (DEBUG) console.error(`Auth middleware: Mobile endpoint - error finding volunteer:`, error);
@@ -175,11 +175,11 @@ exports.protect = async (req, res, next) => {
         try {
           if (DEBUG) console.log(`Auth middleware: Checking for NGO with ID: ${userId}`);
           const ngo = await Ngo.findById(userId);
-          if (ngo) {
+      if (ngo) {
             if (DEBUG) console.log(`Auth middleware: NGO found: ${ngo.name}`);
-            req.user = ngo;
-            req.userType = 'ngo';
-            return next();
+        req.user = ngo;
+        req.userType = 'ngo';
+        return next();
           } else {
             if (DEBUG) console.log(`Auth middleware: No NGO found with ID: ${userId}`);
           }
