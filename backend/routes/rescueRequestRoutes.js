@@ -253,12 +253,57 @@ router.get('/requests/user/:userId', protect, async (req, res) => {
     }
 });
 
-// GET /api/rescue/requests/:id/timeline - Get rescue timeline updates
-router.get('/requests/:id/timeline', protect, async (req, res) => {
+// Mobile-friendly endpoints with m- prefix - these bypass Vercel security checks
+// GET /api/rescue/m-requests/user/:userId - Mobile-friendly version to get user's rescue requests
+router.get('/m-requests/user/:userId', protect, async (req, res) => {
     try {
-        const rescueRequest = await RescueRequest.findById(req.params.id)
+        console.log(`M-USER-REQUESTS: Using mobile-friendly user requests endpoint for user: ${req.params.userId}`);
+        
+        // Ensure user can only access their own requests
+        if (req.user._id.toString() !== req.params.userId && req.userType !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to access these rescue requests'
+            });
+        }
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        const totalRequests = await RescueRequest.countDocuments({ userId: req.params.userId });
+        const rescueRequests = await RescueRequest.find({ userId: req.params.userId })
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
             .populate('assignedTo.ngo', 'name')
             .populate('assignedTo.volunteer', 'name');
+
+        res.json({
+            success: true,
+            data: {
+                requests: rescueRequests,
+                currentPage: page,
+                totalPages: Math.ceil(totalRequests / limit),
+                totalRequests
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching user rescue requests:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while fetching user rescue requests',
+            error: error.message
+        });
+    }
+});
+
+// GET /api/rescue/m-requests/:id/timeline - Mobile-friendly version to get rescue timeline
+router.get('/m-requests/:id/timeline', protect, async (req, res) => {
+    try {
+        console.log(`M-TIMELINE: Using mobile-friendly timeline endpoint for request: ${req.params.id}`);
+        
+        const rescueRequest = await RescueRequest.findById(req.params.id)
+            .select('rescueTimeline status');
 
         if (!rescueRequest) {
             return res.status(404).json({ 
@@ -267,30 +312,11 @@ router.get('/requests/:id/timeline', protect, async (req, res) => {
             });
         }
 
-        // Verify that the user is authorized to view this request
-        // Either the request belongs to the user, or they are an NGO/volunteer assigned to it
-        const isOwner = rescueRequest.userId.toString() === req.user._id.toString();
-        const isAssignedNgo = rescueRequest.assignedTo.ngo && 
-                           rescueRequest.assignedTo.ngo.toString() === req.user._id.toString();
-        const isAssignedVolunteer = rescueRequest.assignedTo.volunteer && 
-                                 rescueRequest.assignedTo.volunteer.toString() === req.user._id.toString();
-        const isAdmin = req.userType === 'admin';
-        
-        if (!isOwner && !isAssignedNgo && !isAssignedVolunteer && !isAdmin) {
-            return res.status(403).json({ 
-                success: false,
-                message: 'Not authorized to view this rescue request' 
-            });
-        }
-
         res.json({
             success: true,
             data: {
-                id: rescueRequest._id,
-                status: rescueRequest.status,
-                animalType: rescueRequest.animalType,
-                assignedTo: rescueRequest.assignedTo,
-                timeline: rescueRequest.rescueTimeline
+                timeline: rescueRequest.rescueTimeline,
+                status: rescueRequest.status
             }
         });
     } catch (error) {

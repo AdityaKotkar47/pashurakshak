@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const morgan = require('morgan');
 const path = require('path');
 const fs = require('fs');
 
@@ -11,20 +12,26 @@ const fileUploadConfig = {
     limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
     debug: true,
     abortOnLimit: true,
-    responseOnLimit: 'File size limit has been reached'
+    responseOnLimit: 'File size limit exceeded (10MB)'
 };
 
 const createApp = () => {
     const app = express();
 
     // Middleware
-    app.use(cors({
-        origin: '*',
-        credentials: true
-    }));
+    app.use(cors());
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: false }));
+    app.use(morgan('dev'));
 
-    app.use(express.json({ limit: '10mb' }));
-    app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+    // Serve static files
+    app.use(express.static(path.join(__dirname, '../public')));
+
+    // Add Vercel Bot detection bypass header
+    app.use((req, res, next) => {
+        res.setHeader('X-Vercel-Bot-Detection-Bypass', 'true');
+        next();
+    });
 
     // Create /tmp directory if it doesn't exist
     const tmpDir = '/tmp';

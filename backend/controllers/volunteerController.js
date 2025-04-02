@@ -32,26 +32,12 @@ const generateToken = (id) => {
     
     console.log(`JWT_SECRET length: ${process.env.JWT_SECRET.length}`);
     
-    try {
-        const token = jwt.sign(payload, process.env.JWT_SECRET, {
-            expiresIn: '30d',
-        });
-        
-        // Verify generated token is valid
-        console.log(`Generated token length: ${token.length}`);
-        console.log(`Token parts: ${token.split('.').length}`);
-        
-        // Simple check to ensure the token can be decoded
-        const decodedCheck = jwt.decode(token);
-        if (!decodedCheck) {
-            throw new Error('Failed to verify generated token');
-        }
-        
-        return token;
-    } catch (error) {
-        console.error('Error generating JWT token:', error);
-        throw new Error(`Token generation failed: ${error.message}`);
-    }
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: '30d',
+    });
+    
+    console.log(`Generated token (first 30 chars): ${token.substring(0, 30)}...`);
+    return token;
 };
 
 // Login volunteer

@@ -666,11 +666,11 @@ http://localhost:5000
     }
     ```
 -   **Error Response**: Status 401
-    ```json
-    {
-        "success": false,
-        "message": "Not authorized, no token"
-    }
+  ```json
+  {
+    "success": false,
+    "message": "Not authorized, no token"
+  }
     ```
 
 #### Get Assigned Rescue Missions
@@ -894,7 +894,7 @@ http://localhost:5000
                 {
                     "_id": "request_id_2",
                     "animalType": "Cat",
-                    "status": "pending",
+            "status": "pending",
                     "emergency": false,
                     "createdAt": "2023-03-30T15:00:00.000Z"
                 }
