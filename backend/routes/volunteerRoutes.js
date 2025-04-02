@@ -5,17 +5,30 @@ const {
     addVolunteer,
     getVolunteers,
     deleteVolunteer,
-    loginVolunteer
+    loginVolunteer,
+    getVolunteerProfile,
+    getMissions,
+    updateMissionStatus,
+    addMissionNotes
 } = require('../controllers/volunteerController');
 
 // Public route for volunteer login
 router.post('/login', loginVolunteer);
 
-// NGO-only routes
+// Middleware to protect routes
 router.use(protect);
+
+// Volunteer-specific routes for mobile app
+// These routes require volunteer authentication
+router.get('/profile', restrictTo('volunteer'), getVolunteerProfile);
+router.get('/missions', restrictTo('volunteer'), getMissions);
+router.put('/missions/:id/status', restrictTo('volunteer'), updateMissionStatus);
+router.post('/missions/:id/notes', restrictTo('volunteer'), addMissionNotes);
+
+// Routes below this point require NGO authentication
 router.use(restrictTo('ngo'));
 
-// Volunteer routes
+// Volunteer management routes (for NGO admins)
 router.post('/add', addVolunteer);
 router.get('/', getVolunteers);
 router.delete('/remove/:volunteerId', deleteVolunteer);

@@ -2,6 +2,7 @@ const Volunteer = require('../models/Volunteer');
 const { sendVolunteerEmail } = require('../utils/emailService');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const RescueRequest = require('../models/RescueRequest');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -170,6 +171,198 @@ exports.deleteVolunteer = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error deleting volunteer',
+            error: error.message
+        });
+    }
+};
+
+// Get volunteer profile
+exports.getVolunteerProfile = async (req, res) => {
+    try {
+        const volunteerId = req.user._id;
+
+        const volunteer = await Volunteer.findById(volunteerId)
+            .select('-password')
+            .populate('ngo', 'name')
+            .populate('activeRescues');
+
+        if (!volunteer) {
+            return res.status(404).json({
+                success: false,
+                message: 'Volunteer not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: volunteer
+        });
+    } catch (error) {
+        console.error('Get volunteer profile error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching volunteer profile',
+            error: error.message
+        });
+    }
+};
+
+// Get assigned rescue missions for a volunteer
+exports.getMissions = async (req, res) => {
+    try {
+        const volunteerId = req.user._id;
+
+        const volunteer = await Volunteer.findById(volunteerId)
+            .select('-password')
+            .populate({
+                path: 'activeRescues',
+                populate: [
+                    { path: 'userId', select: 'name' },
+                    { path: 'assignedTo.ngo', select: 'name' }
+                ]
+            });
+
+        if (!volunteer) {
+            return res.status(404).json({
+                success: false,
+                message: 'Volunteer not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            count: volunteer.activeRescues.length,
+            data: volunteer.activeRescues
+        });
+    } catch (error) {
+        console.error('Get volunteer missions error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching volunteer missions',
+            error: error.message
+        });
+    }
+};
+
+// Update mission status
+exports.updateMissionStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status, notes } = req.body;
+        const volunteerId = req.user._id;
+
+        // Validate status
+        const validStatuses = [
+            'volunteer_dispatched',
+            'reached_location',
+            'animal_rescued',
+            'returning_to_center',
+            'treatment_started'
+        ];
+
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid status. Must be one of: ${validStatuses.join(', ')}`
+            });
+        }
+
+        // Find the rescue request and check if it's assigned to this volunteer
+        const rescueRequest = await RescueRequest.findOne({
+            _id: id,
+            'assignedTo.volunteer': volunteerId
+        });
+
+        if (!rescueRequest) {
+            return res.status(404).json({
+                success: false,
+                message: 'Rescue mission not found or not assigned to you'
+            });
+        }
+
+        // Update rescue request status if needed
+        if (status === 'volunteer_dispatched' && rescueRequest.status === 'accepted') {
+            rescueRequest.status = 'in_progress';
+        } else if (status === 'treatment_started' && rescueRequest.status === 'in_progress') {
+            rescueRequest.status = 'completed';
+            
+            // Update volunteer completed rescues count and remove from active rescues
+            await Volunteer.findByIdAndUpdate(volunteerId, {
+                $inc: { completedRescues: 1 },
+                $pull: { activeRescues: id }
+            });
+        }
+
+        // Add timeline entry
+        rescueRequest.rescueTimeline.push({
+            status,
+            timestamp: Date.now(),
+            notes: notes || `Status updated to ${status}`
+        });
+
+        await rescueRequest.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Mission status updated successfully',
+            data: rescueRequest
+        });
+    } catch (error) {
+        console.error('Update mission status error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating mission status',
+            error: error.message
+        });
+    }
+};
+
+// Add notes to mission
+exports.addMissionNotes = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { notes } = req.body;
+        const volunteerId = req.user._id;
+
+        if (!notes || notes.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Notes cannot be empty'
+            });
+        }
+
+        // Find the rescue request and check if it's assigned to this volunteer
+        const rescueRequest = await RescueRequest.findOne({
+            _id: id,
+            'assignedTo.volunteer': volunteerId
+        });
+
+        if (!rescueRequest) {
+            return res.status(404).json({
+                success: false,
+                message: 'Rescue mission not found or not assigned to you'
+            });
+        }
+
+        // Add notes to timeline
+        rescueRequest.rescueTimeline.push({
+            status: rescueRequest.rescueTimeline[rescueRequest.rescueTimeline.length - 1].status,
+            timestamp: Date.now(),
+            notes: notes
+        });
+
+        await rescueRequest.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Notes added successfully',
+            data: rescueRequest
+        });
+    } catch (error) {
+        console.error('Add mission notes error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error adding mission notes',
             error: error.message
         });
     }

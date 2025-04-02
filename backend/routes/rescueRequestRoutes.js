@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const RescueRequest = require('../models/RescueRequest');
-const auth = require('../middleware/auth');
+const { protect, restrictTo } = require('../middleware/authMiddleware');
 const { check, validationResult } = require('express-validator');
 
 // Validation middleware
@@ -13,16 +13,19 @@ const validateRescueRequest = [
 ];
 
 // POST /api/rescue/request - Create a new rescue request
-router.post('/request', [auth, validateRescueRequest], async (req, res) => {
+router.post('/request', [protect, validateRescueRequest], async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            return res.status(400).json({ 
+                success: false,
+                errors: errors.array() 
+            });
         }
 
         const rescueRequest = new RescueRequest({
             ...req.body,
-            userId: req.user.id,
+            userId: req.user._id,
             rescueTimeline: [{
                 status: 'request_received',
                 timestamp: Date.now(),
@@ -31,15 +34,23 @@ router.post('/request', [auth, validateRescueRequest], async (req, res) => {
         });
 
         await rescueRequest.save();
-        res.status(201).json(rescueRequest);
+        
+        res.status(201).json({
+            success: true,
+            data: rescueRequest
+        });
     } catch (error) {
         console.error('Error creating rescue request:', error);
-        res.status(500).json({ error: 'Server error while creating rescue request' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while creating rescue request',
+            error: error.message
+        });
     }
 });
 
 // GET /api/rescue/requests - Get all rescue requests (paginated)
-router.get('/requests', auth, async (req, res) => {
+router.get('/requests', protect, async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
@@ -60,19 +71,26 @@ router.get('/requests', auth, async (req, res) => {
             .populate('assignedTo.volunteer', 'name');
 
         res.json({
-            requests: rescueRequests,
-            currentPage: page,
-            totalPages: Math.ceil(totalRequests / limit),
-            totalRequests
+            success: true,
+            data: {
+                requests: rescueRequests,
+                currentPage: page,
+                totalPages: Math.ceil(totalRequests / limit),
+                totalRequests
+            }
         });
     } catch (error) {
         console.error('Error fetching rescue requests:', error);
-        res.status(500).json({ error: 'Server error while fetching rescue requests' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while fetching rescue requests',
+            error: error.message 
+        });
     }
 });
 
 // GET /api/rescue/requests/:id - Get rescue request details
-router.get('/requests/:id', auth, async (req, res) => {
+router.get('/requests/:id', protect, async (req, res) => {
     try {
         const rescueRequest = await RescueRequest.findById(req.params.id)
             .populate('userId', 'name')
@@ -80,52 +98,76 @@ router.get('/requests/:id', auth, async (req, res) => {
             .populate('assignedTo.volunteer', 'name');
 
         if (!rescueRequest) {
-            return res.status(404).json({ error: 'Rescue request not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Rescue request not found' 
+            });
         }
 
-        res.json(rescueRequest);
+        res.json({
+            success: true,
+            data: rescueRequest
+        });
     } catch (error) {
         console.error('Error fetching rescue request:', error);
-        res.status(500).json({ error: 'Server error while fetching rescue request' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while fetching rescue request',
+            error: error.message
+        });
     }
 });
 
 // PUT /api/rescue/requests/:id/accept - NGO accepts a rescue request
-router.put('/requests/:id/accept', auth, async (req, res) => {
+router.put('/requests/:id/accept', protect, restrictTo('ngo'), async (req, res) => {
     try {
         const rescueRequest = await RescueRequest.findById(req.params.id);
         if (!rescueRequest) {
-            return res.status(404).json({ error: 'Rescue request not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Rescue request not found' 
+            });
         }
 
         // Update status and assigned NGO
         rescueRequest.status = 'accepted';
-        rescueRequest.assignedTo.ngo = req.user.ngoId;
+        rescueRequest.assignedTo.ngo = req.user._id;
         rescueRequest.assignedTo.assignedAt = Date.now();
 
         // Add timeline entry
         rescueRequest.rescueTimeline.push({
             status: 'ngo_assigned',
             timestamp: Date.now(),
-            notes: `Request accepted by NGO: ${req.user.ngoName}`
+            notes: `Request accepted by NGO: ${req.user.name}`
         });
 
         await rescueRequest.save();
-        res.json(rescueRequest);
+        
+        res.json({
+            success: true,
+            data: rescueRequest
+        });
     } catch (error) {
         console.error('Error accepting rescue request:', error);
-        res.status(500).json({ error: 'Server error while accepting rescue request' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while accepting rescue request',
+            error: error.message
+        });
     }
 });
 
 // PUT /api/rescue/requests/:id/status - Update rescue request status
-router.put('/requests/:id/status', auth, async (req, res) => {
+router.put('/requests/:id/status', protect, async (req, res) => {
     try {
         const { status, notes } = req.body;
         const rescueRequest = await RescueRequest.findById(req.params.id);
         
         if (!rescueRequest) {
-            return res.status(404).json({ error: 'Rescue request not found' });
+            return res.status(404).json({ 
+                success: false,
+                message: 'Rescue request not found' 
+            });
         }
 
         // Validate status transition
@@ -139,7 +181,8 @@ router.put('/requests/:id/status', auth, async (req, res) => {
 
         if (!validTransitions[rescueRequest.status].includes(status)) {
             return res.status(400).json({ 
-                error: `Invalid status transition from ${rescueRequest.status} to ${status}` 
+                success: false,
+                message: `Invalid status transition from ${rescueRequest.status} to ${status}` 
             });
         }
 
@@ -154,16 +197,32 @@ router.put('/requests/:id/status', auth, async (req, res) => {
         });
 
         await rescueRequest.save();
-        res.json(rescueRequest);
+        
+        res.json({
+            success: true,
+            data: rescueRequest
+        });
     } catch (error) {
         console.error('Error updating rescue request status:', error);
-        res.status(500).json({ error: 'Server error while updating rescue request status' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while updating rescue request status',
+            error: error.message
+        });
     }
 });
 
 // GET /api/rescue/requests/user/:userId - Get user's rescue requests
-router.get('/requests/user/:userId', auth, async (req, res) => {
+router.get('/requests/user/:userId', protect, async (req, res) => {
     try {
+        // Ensure user can only access their own requests
+        if (req.user._id.toString() !== req.params.userId && req.userType !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: 'Not authorized to access these rescue requests'
+            });
+        }
+
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
 
@@ -176,14 +235,71 @@ router.get('/requests/user/:userId', auth, async (req, res) => {
             .populate('assignedTo.volunteer', 'name');
 
         res.json({
-            requests: rescueRequests,
-            currentPage: page,
-            totalPages: Math.ceil(totalRequests / limit),
-            totalRequests
+            success: true,
+            data: {
+                requests: rescueRequests,
+                currentPage: page,
+                totalPages: Math.ceil(totalRequests / limit),
+                totalRequests
+            }
         });
     } catch (error) {
         console.error('Error fetching user rescue requests:', error);
-        res.status(500).json({ error: 'Server error while fetching user rescue requests' });
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while fetching user rescue requests',
+            error: error.message
+        });
+    }
+});
+
+// GET /api/rescue/requests/:id/timeline - Get rescue timeline updates
+router.get('/requests/:id/timeline', protect, async (req, res) => {
+    try {
+        const rescueRequest = await RescueRequest.findById(req.params.id)
+            .populate('assignedTo.ngo', 'name')
+            .populate('assignedTo.volunteer', 'name');
+
+        if (!rescueRequest) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Rescue request not found' 
+            });
+        }
+
+        // Verify that the user is authorized to view this request
+        // Either the request belongs to the user, or they are an NGO/volunteer assigned to it
+        const isOwner = rescueRequest.userId.toString() === req.user._id.toString();
+        const isAssignedNgo = rescueRequest.assignedTo.ngo && 
+                           rescueRequest.assignedTo.ngo.toString() === req.user._id.toString();
+        const isAssignedVolunteer = rescueRequest.assignedTo.volunteer && 
+                                 rescueRequest.assignedTo.volunteer.toString() === req.user._id.toString();
+        const isAdmin = req.userType === 'admin';
+        
+        if (!isOwner && !isAssignedNgo && !isAssignedVolunteer && !isAdmin) {
+            return res.status(403).json({ 
+                success: false,
+                message: 'Not authorized to view this rescue request' 
+            });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                id: rescueRequest._id,
+                status: rescueRequest.status,
+                animalType: rescueRequest.animalType,
+                assignedTo: rescueRequest.assignedTo,
+                timeline: rescueRequest.rescueTimeline
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching rescue timeline:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error while fetching rescue timeline',
+            error: error.message
+        });
     }
 });
 
