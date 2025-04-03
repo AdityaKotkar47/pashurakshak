@@ -206,29 +206,29 @@ router.put('/requests/:id/status', protect, async (req, res) => {
         // Update main status
         rescueRequest.status = status;
         
-        // Add appropriate timeline entry based on status change
-        // These timeline statuses are from the enum in the RescueRequest model
+        // Use actual timeline status values based on the request status
+        // This mapping ensures we use only valid enum values
+        let timelineStatus;
+        
         if (status === 'in_progress') {
-            rescueRequest.rescueTimeline.push({
-                status: 'volunteer_dispatched',  // This is a valid timeline status
-                timestamp: Date.now(),
-                notes: notes || 'Volunteer dispatched to location'
-            });
+            timelineStatus = 'volunteer_dispatched';
         } 
         else if (status === 'completed') {
-            rescueRequest.rescueTimeline.push({
-                status: 'completed',  // This is a valid timeline status
-                timestamp: Date.now(),
-                notes: notes || 'Rescue completed successfully'
-            });
+            timelineStatus = 'animal_rescued';
         }
         else if (status === 'cancelled') {
-            rescueRequest.rescueTimeline.push({
-                status: 'request_received',  // Using a valid status as placeholder for cancellation
-                timestamp: Date.now(),
-                notes: notes || 'Rescue request cancelled'
-            });
+            timelineStatus = 'request_received';
         }
+        else {
+            timelineStatus = 'request_received';
+        }
+
+        // Add the timeline entry with the correct status
+        rescueRequest.rescueTimeline.push({
+            status: timelineStatus,
+            timestamp: Date.now(),
+            notes: notes || `Status updated to ${status}`
+        });
 
         // Save the changes
         await rescueRequest.save();
