@@ -203,25 +203,42 @@ router.put('/requests/:id/status', protect, async (req, res) => {
             });
         }
 
-        // Update status
+        // Update main status
         rescueRequest.status = status;
         
-        // Map main status to timeline status
-        const statusToTimelineStatus = {
-            'in_progress': 'volunteer_dispatched',
-            'completed': 'completed',
-            'cancelled': 'cancelled'
+        // Define the timeline status mapping based on the main status transition
+        const getTimelineStatus = (newStatus) => {
+            switch(newStatus) {
+                case 'in_progress':
+                    return 'volunteer_dispatched';
+                case 'completed':
+                    return 'completed';
+                case 'cancelled':
+                    return 'request_received';
+                default:
+                    return 'request_received';
+            }
         };
 
-        // Add timeline entry with mapped status
-        const timelineStatus = statusToTimelineStatus[status] || status;
-        rescueRequest.rescueTimeline.push({
+        // Add timeline entry with the correct status
+        const timelineStatus = getTimelineStatus(status);
+        
+        // Add the timeline entry
+        const timelineEntry = {
             status: timelineStatus,
             timestamp: Date.now(),
             notes: notes || `Status updated to ${status}`
-        });
+        };
 
+        // Add to timeline
+        rescueRequest.rescueTimeline.push(timelineEntry);
+
+        // Save the changes
         await rescueRequest.save();
+        
+        // Populate necessary fields
+        await rescueRequest.populate('assignedTo.ngo', 'name');
+        await rescueRequest.populate('assignedTo.volunteer', 'name');
         
         res.json({
             success: true,
