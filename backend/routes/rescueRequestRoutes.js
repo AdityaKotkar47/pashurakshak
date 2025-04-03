@@ -206,26 +206,16 @@ router.put('/requests/:id/status', protect, async (req, res) => {
         // Update main status
         rescueRequest.status = status;
         
-        // Define the timeline status mapping based on the main status transition
-        const getTimelineStatus = (newStatus) => {
-            switch(newStatus) {
-                case 'in_progress':
-                    return 'volunteer_dispatched';
-                case 'completed':
-                    return 'completed';
-                case 'cancelled':
-                    return 'request_received';
-                default:
-                    return 'request_received';
-            }
+        // Map the main status to a valid timeline status
+        const mainToTimelineStatus = {
+            'in_progress': 'reached_location',  // Changed from volunteer_dispatched to reached_location
+            'completed': 'completed',
+            'cancelled': 'request_received'
         };
 
-        // Add timeline entry with the correct status
-        const timelineStatus = getTimelineStatus(status);
-        
-        // Add the timeline entry
+        // Add timeline entry with the correct status from the mapping
         const timelineEntry = {
-            status: timelineStatus,
+            status: mainToTimelineStatus[status] || 'request_received',
             timestamp: Date.now(),
             notes: notes || `Status updated to ${status}`
         };
