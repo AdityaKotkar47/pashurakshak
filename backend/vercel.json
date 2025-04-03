@@ -12,7 +12,7 @@
     ],
     "routes": [
         {
-            "src": "/api/rescue/requests/(?<id>[^/]+)/status",
+            "src": "/api/rescue/requests/([^/]+)/status",
             "dest": "server.js",
             "methods": ["PUT", "OPTIONS"],
             "headers": {
@@ -25,7 +25,7 @@
             }
         },
         {
-            "src": "/api/rescue/requests/(?<id>[^/]+)/notes",
+            "src": "/api/rescue/requests/([^/]+)/notes",
             "dest": "server.js",
             "methods": ["POST", "OPTIONS"],
             "headers": {
@@ -108,7 +108,7 @@
             }
         },
         {
-            "src": "/api/rescue/requests/(?<id>[^/]+)/assign-volunteer",
+            "src": "/api/rescue/requests/([^/]+)/assign-volunteer",
             "dest": "server.js",
             "methods": ["PUT", "OPTIONS"],
             "headers": {
@@ -121,7 +121,7 @@
             }
         },
         {
-            "src": "/api/rescue/requests/(?<id>[^/]+)/accept",
+            "src": "/api/rescue/requests/([^/]+)/accept",
             "dest": "server.js",
             "methods": ["PUT", "OPTIONS"],
             "headers": {
