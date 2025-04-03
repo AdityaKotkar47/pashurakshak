@@ -206,33 +206,29 @@ router.put('/requests/:id/status', protect, async (req, res) => {
         // Update main status
         rescueRequest.status = status;
         
-        // Define timeline status based on the main status transition
-        let timelineStatus;
-        let timelineNotes = notes || `Status updated to ${status}`;
-
-        switch(status) {
-            case 'in_progress':
-                timelineStatus = 'reached_location';
-                timelineNotes = notes || 'Volunteer reached the location';
-                break;
-            case 'completed':
-                timelineStatus = 'animal_rescued';
-                timelineNotes = notes || 'Animal rescue completed successfully';
-                break;
-            case 'cancelled':
-                timelineStatus = 'request_received';
-                timelineNotes = notes || 'Rescue request cancelled';
-                break;
-            default:
-                timelineStatus = 'request_received';
+        // Add appropriate timeline entry based on status change
+        // These timeline statuses are from the enum in the RescueRequest model
+        if (status === 'in_progress') {
+            rescueRequest.rescueTimeline.push({
+                status: 'volunteer_dispatched',  // This is a valid timeline status
+                timestamp: Date.now(),
+                notes: notes || 'Volunteer dispatched to location'
+            });
+        } 
+        else if (status === 'completed') {
+            rescueRequest.rescueTimeline.push({
+                status: 'completed',  // This is a valid timeline status
+                timestamp: Date.now(),
+                notes: notes || 'Rescue completed successfully'
+            });
         }
-
-        // Add timeline entry
-        rescueRequest.rescueTimeline.push({
-            status: timelineStatus,
-            timestamp: Date.now(),
-            notes: timelineNotes
-        });
+        else if (status === 'cancelled') {
+            rescueRequest.rescueTimeline.push({
+                status: 'request_received',  // Using a valid status as placeholder for cancellation
+                timestamp: Date.now(),
+                notes: notes || 'Rescue request cancelled'
+            });
+        }
 
         // Save the changes
         await rescueRequest.save();
