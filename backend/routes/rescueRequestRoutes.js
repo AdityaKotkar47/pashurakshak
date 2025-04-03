@@ -206,9 +206,17 @@ router.put('/requests/:id/status', protect, async (req, res) => {
         // Update status
         rescueRequest.status = status;
         
-        // Add timeline entry
+        // Map main status to timeline status
+        const statusToTimelineStatus = {
+            'in_progress': 'volunteer_dispatched',
+            'completed': 'completed',
+            'cancelled': 'cancelled'
+        };
+
+        // Add timeline entry with mapped status
+        const timelineStatus = statusToTimelineStatus[status] || status;
         rescueRequest.rescueTimeline.push({
-            status,
+            status: timelineStatus,
             timestamp: Date.now(),
             notes: notes || `Status updated to ${status}`
         });
