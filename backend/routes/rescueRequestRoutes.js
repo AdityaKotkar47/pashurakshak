@@ -121,6 +121,8 @@ router.get('/requests/:id', protect, async (req, res) => {
 // PUT /api/rescue/requests/:id/accept - NGO accepts a rescue request
 router.put('/requests/:id/accept', protect, restrictTo('ngo'), async (req, res) => {
     try {
+        const { volunteerId } = req.body; // Get volunteerId from request body
+        
         const rescueRequest = await RescueRequest.findById(req.params.id);
         if (!rescueRequest) {
             return res.status(404).json({ 
@@ -129,19 +131,34 @@ router.put('/requests/:id/accept', protect, restrictTo('ngo'), async (req, res) 
             });
         }
 
-        // Update status and assigned NGO
+        // Update status and assigned NGO and volunteer
         rescueRequest.status = 'accepted';
         rescueRequest.assignedTo.ngo = req.user._id;
+        if (volunteerId) {
+            rescueRequest.assignedTo.volunteer = volunteerId;
+        }
         rescueRequest.assignedTo.assignedAt = Date.now();
 
-        // Add timeline entry
+        // Add timeline entries
         rescueRequest.rescueTimeline.push({
             status: 'ngo_assigned',
             timestamp: Date.now(),
             notes: `Request accepted by NGO: ${req.user.name}`
         });
 
+        if (volunteerId) {
+            rescueRequest.rescueTimeline.push({
+                status: 'volunteer_assigned',
+                timestamp: Date.now(),
+                notes: `Volunteer assigned to the request`
+            });
+        }
+
         await rescueRequest.save();
+        
+        // Populate the response with NGO and volunteer details
+        await rescueRequest.populate('assignedTo.ngo', 'name');
+        await rescueRequest.populate('assignedTo.volunteer', 'name');
         
         res.json({
             success: true,
