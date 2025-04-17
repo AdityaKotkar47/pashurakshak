@@ -81,6 +81,14 @@ const { sendPasswordResetEmail } = require('../utils/email');
  *       409:
  *         description: User already exists
  */
+const generateToken = (id, role) => {
+  // Use the full secret to match middleware verification
+  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+    algorithm: 'HS256'
+  });
+};
+
 const register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -100,9 +108,7 @@ const register = async (req, res) => {
       role: role === 'admin' ? 'admin' : 'user'
     });
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '30d'
-    });
+    const token = generateToken(user._id, user.role);
 
     res.status(201).json({
       success: true,
@@ -162,9 +168,7 @@ const login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '30d'
-    });
+    const token = generateToken(user._id, user.role);
 
     res.status(200).json({
       success: true,

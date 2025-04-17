@@ -30,10 +30,9 @@ const generateToken = (id) => {
         throw new Error('JWT_SECRET is not defined');
     }
     
-    // Shorten JWT_SECRET to avoid issues with very long secrets
-    // Use first 64 characters which is secure enough for HS256
-    const secret = process.env.JWT_SECRET.substring(0, 64);
-    console.log(`Using JWT_SECRET length: ${secret.length}`);
+    // Use the full JWT_SECRET to match the auth middleware
+    const secret = process.env.JWT_SECRET;
+    console.log(`Using full JWT_SECRET length: ${secret.length}`);
     
     // Use HS256 algorithm explicitly 
     const token = jwt.sign(payload, secret, {

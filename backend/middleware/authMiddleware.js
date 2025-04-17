@@ -9,8 +9,8 @@ const DEBUG = process.env.NODE_ENV !== 'production' || process.env.DEBUG_AUTH ==
 
 // Use a consistent secret (shortened version) across the application
 const getJwtSecret = () => {
-  // Use first 64 characters which is secure enough for HS256
-  return process.env.JWT_SECRET.substring(0, 64);
+  // IMPORTANT: Return the full secret without substring to match token generation
+  return process.env.JWT_SECRET;
 };
 
 exports.protect = async (req, res, next) => {
