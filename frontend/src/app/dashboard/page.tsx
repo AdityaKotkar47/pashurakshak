@@ -7,10 +7,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import volunteerService from '@/utils/volunteerService';
-import { DashboardSkeleton } from '@/components/skeletons/dashboard-skeleton';
+import rescueRequestService from '@/utils/rescueRequestService';
 
 // Define all NGO routes for prefetching
-const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers', '/animals'];
+const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers'];
 
 // In future, this will be replaced with real-time data
 interface DashboardStats {
@@ -62,21 +62,37 @@ export default function DashboardPage() {
         try {
             // Fetch real volunteer count
             const volunteers = await volunteerService.getVolunteers();
+            
+            // Fetch all rescue requests
+            let totalRequests = 0;
+            let completedRequests = 0;
+            
+            try {
+                // Fetch total requests (all statuses)
+                const allRequests = await rescueRequestService.getRescueRequests(1, 1);
+                totalRequests = allRequests.totalRequests;
+                
+                // Fetch completed requests
+                const completedRequestsData = await rescueRequestService.getRescueRequests(1, 1, 'completed');
+                completedRequests = completedRequestsData.totalRequests;
+            } catch (error) {
+                console.error('Error fetching rescue requests stats:', error);
+            }
 
             setStats({
-                requests: 12, // Sample data
+                requests: totalRequests,
                 volunteers: volunteers.length,
-                animals: 24, // Sample data
-                completed: 6, // Sample data
+                animals: 0, // Animals is not tracked in the system per updated requirements
+                completed: completedRequests,
             });
         } catch (error) {
             console.error('Error fetching dashboard stats:', error);
             // Fallback to sample data if API fails
             setStats({
-                requests: 12,
+                requests: 0,
                 volunteers: 0,
-                animals: 24,
-                completed: 6,
+                animals: 0,
+                completed: 0,
             });
         } finally {
             setLoading(false);
@@ -94,11 +110,16 @@ export default function DashboardPage() {
         [router]
     );
 
-    // If loading, show skeleton
+    // If loading, show simple loading indicator instead of skeleton
     if (loading) {
         return (
             <ProtectedRoute type="ngo">
-                <DashboardSkeleton />
+                <div className="flex items-center justify-center min-h-[60vh]">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4 mx-auto"></div>
+                        <p className="text-muted-foreground">Loading dashboard data...</p>
+                    </div>
+                </div>
             </ProtectedRoute>
         );
     }
@@ -119,7 +140,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 min-w-0">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 min-w-0">
                     <Link
                         href="/requests"
                         prefetch={true}
@@ -162,30 +183,6 @@ export default function DashboardPage() {
                                     </h2>
                                     <p className="mt-1 text-3xl font-bold text-secondary-600 dark:text-theme-paw">
                                         {stats.volunteers}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </Link>
-
-                    <Link
-                        href="/animals"
-                        prefetch={true}
-                        onMouseEnter={() => handleHover('/animals')}
-                        className="group relative transform transition-transform duration-150 hover:-translate-y-1 hover:cursor-pointer"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-theme-heart to-theme-paw rounded-2xl blur opacity-20 group-hover:opacity-100 transition-opacity duration-150 dark:from-theme-nature dark:to-theme-paw/50" />
-                        <div className="card relative bg-white dark:bg-gradient-to-br dark:from-card-dark dark:to-card-dark/90">
-                            <div className="flex items-center gap-4">
-                                <div className="p-2 rounded-xl bg-accent-50 text-accent-600 dark:bg-theme-nature/10 dark:text-theme-nature">
-                                    <PiDogFill className="w-6 h-6 transform transition-transform duration-150 group-hover:scale-110" />
-                                </div>
-                                <div>
-                                    <h2 className="text-sm font-medium text-muted-foreground dark:text-foreground-dark/60">
-                                        Animals Listed
-                                    </h2>
-                                    <p className="mt-1 text-3xl font-bold text-accent-600 dark:text-theme-nature">
-                                        {stats.animals}
                                     </p>
                                 </div>
                             </div>
