@@ -4,7 +4,38 @@ import { useEffect, useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import rescueRequestService, { RescueRequest } from '@/utils/rescueRequestService';
 import volunteerService, { Volunteer } from '@/utils/volunteerService';
-import { FiAlertCircle, FiChevronRight, FiClock, FiMapPin } from 'react-icons/fi';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from '@/components/ui/pagination';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+    DialogFooter,
+    DialogClose,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from '@/hooks/use-toast';
+import { FiAlertCircle, FiCalendar, FiChevronRight, FiClock, FiMapPin, FiUser } from 'react-icons/fi';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function RequestsPage() {
     const [requests, setRequests] = useState<RescueRequest[]>([]);
@@ -20,7 +51,6 @@ export default function RequestsPage() {
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [assignModalOpen, setAssignModalOpen] = useState(false);
     const [processingAction, setProcessingAction] = useState(false);
-    const [activeTab, setActiveTab] = useState('details');
 
     // Fetch rescue requests
     const fetchRequests = async () => {
@@ -62,11 +92,18 @@ export default function RequestsPage() {
         setProcessingAction(true);
         try {
             await rescueRequestService.acceptRescueRequest(id);
-            alert('Rescue request accepted successfully');
+            toast({
+                title: 'Success',
+                description: 'Rescue request accepted successfully',
+            });
             fetchRequests(); // Refresh requests
             setDetailsOpen(false);
         } catch (err) {
-            alert('Failed to accept rescue request');
+            toast({
+                title: 'Error',
+                description: 'Failed to accept rescue request',
+                variant: 'destructive',
+            });
         } finally {
             setProcessingAction(false);
         }
@@ -79,12 +116,19 @@ export default function RequestsPage() {
         setProcessingAction(true);
         try {
             await rescueRequestService.assignVolunteerToRequest(selectedRequest._id, selectedVolunteer);
-            alert('Volunteer assigned successfully');
+            toast({
+                title: 'Success',
+                description: 'Volunteer assigned successfully',
+            });
             fetchRequests(); // Refresh requests
             setAssignModalOpen(false);
             setDetailsOpen(false);
         } catch (err) {
-            alert('Failed to assign volunteer');
+            toast({
+                title: 'Error',
+                description: 'Failed to assign volunteer',
+                variant: 'destructive',
+            });
         } finally {
             setProcessingAction(false);
         }
@@ -102,95 +146,74 @@ export default function RequestsPage() {
         setAssignModalOpen(true);
     };
 
-    // Get status badge color and text
+    // Get status badge color
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'pending':
-                return <span className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-full">Pending</span>;
+                return <Badge variant="secondary">Pending</Badge>;
             case 'accepted':
-                return <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">Accepted</span>;
+                return <Badge variant="outline">Accepted</Badge>;
             case 'in_progress':
-                return <span className="px-2 py-1 text-xs bg-blue-500 text-white rounded-full">In Progress</span>;
+                return <Badge variant="default" className="bg-blue-500">In Progress</Badge>;
             case 'completed':
-                return <span className="px-2 py-1 text-xs bg-green-500 text-white rounded-full">Completed</span>;
+                return <Badge variant="default" className="bg-green-500">Completed</Badge>;
             case 'cancelled':
-                return <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full">Cancelled</span>;
+                return <Badge variant="destructive">Cancelled</Badge>;
             default:
-                return <span className="px-2 py-1 text-xs bg-gray-200 text-gray-800 rounded-full">{status}</span>;
+                return <Badge>{status}</Badge>;
         }
     };
 
     // Format date
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return `${date.toLocaleDateString()} • ${getTimeAgo(date)}`;
-    };
-
-    // Simple time ago function to replace date-fns
-    const getTimeAgo = (date: Date) => {
-        const now = new Date();
-        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-        
-        let interval = Math.floor(seconds / 31536000);
-        if (interval >= 1) {
-            return interval === 1 ? '1 year ago' : `${interval} years ago`;
-        }
-        
-        interval = Math.floor(seconds / 2592000);
-        if (interval >= 1) {
-            return interval === 1 ? '1 month ago' : `${interval} months ago`;
-        }
-        
-        interval = Math.floor(seconds / 86400);
-        if (interval >= 1) {
-            return interval === 1 ? '1 day ago' : `${interval} days ago`;
-        }
-        
-        interval = Math.floor(seconds / 3600);
-        if (interval >= 1) {
-            return interval === 1 ? '1 hour ago' : `${interval} hours ago`;
-        }
-        
-        interval = Math.floor(seconds / 60);
-        if (interval >= 1) {
-            return interval === 1 ? '1 minute ago' : `${interval} minutes ago`;
-        }
-        
-        return 'just now';
+        return `${date.toLocaleDateString()} • ${formatDistanceToNow(date, { addSuffix: true })}`;
     };
 
     return (
         <ProtectedRoute type="ngo">
             <div className="space-y-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-green-500 via-blue-600 to-purple-500 bg-clip-text text-transparent">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-theme-nature via-primary-dark to-theme-heart bg-clip-text text-transparent">
                         Rescue Requests
                     </h1>
-                    <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-4">
                         <div>
-                            <select
+                            <Select
                                 value={statusFilter}
-                                onChange={(e) => setStatusFilter(e.target.value)}
-                                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onValueChange={setStatusFilter}
                             >
-                                <option value="">All Statuses</option>
-                                <option value="pending">Pending</option>
-                                <option value="accepted">Accepted</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                            </select>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Filter by status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem value="">All Statuses</SelectItem>
+                                        <SelectItem value="pending">Pending</SelectItem>
+                                        <SelectItem value="accepted">Accepted</SelectItem>
+                                        <SelectItem value="in_progress">In Progress</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div>
-                            <select
+                            <Select
                                 value={emergencyFilter}
-                                onChange={(e) => setEmergencyFilter(e.target.value)}
-                                className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onValueChange={setEmergencyFilter}
                             >
-                                <option value="">All Requests</option>
-                                <option value="true">Emergency Only</option>
-                                <option value="false">Non-Emergency Only</option>
-                            </select>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Emergency filter" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
+                                        <SelectItem value="">All Requests</SelectItem>
+                                        <SelectItem value="true">Emergency Only</SelectItem>
+                                        <SelectItem value="false">Non-Emergency Only</SelectItem>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </div>
@@ -200,12 +223,12 @@ export default function RequestsPage() {
                 ) : error ? (
                     <div className="text-center py-10 text-red-500">{error}</div>
                 ) : requests.length === 0 ? (
-                    <div className="bg-white rounded-lg shadow p-6 dark:bg-gray-800">
+                    <div className="card dark:bg-gradient-to-br dark:from-card-dark dark:to-card-dark/90 hover-lift">
                         <div className="flex flex-col items-center justify-center py-10">
-                            <p className="text-lg font-medium">
+                            <p className="text-lg font-medium text-foreground dark:text-foreground-dark">
                                 No rescue requests found
                             </p>
-                            <p className="text-sm text-gray-500 mt-2">
+                            <p className="text-sm text-muted-foreground dark:text-foreground-dark/60 mt-2">
                                 {statusFilter || emergencyFilter
                                     ? 'Try changing your filters'
                                     : 'New requests will appear here'}
@@ -218,29 +241,29 @@ export default function RequestsPage() {
                             {requests.map((request) => (
                                 <div
                                     key={request._id}
-                                    className="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-lg transition-all dark:bg-gray-800"
+                                    className="card dark:bg-gradient-to-br dark:from-card-dark dark:to-card-dark/90 hover-lift cursor-pointer transition-all hover:shadow-lg"
                                     onClick={() => openRequestDetails(request)}
                                 >
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between">
                                         <div className="flex-1">
-                                            <div className="flex items-center space-x-2 mb-2 flex-wrap">
+                                            <div className="flex items-center space-x-2 mb-2">
                                                 {getStatusBadge(request.status)}
                                                 {request.emergency && (
-                                                    <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full flex items-center">
+                                                    <Badge variant="destructive" className="ml-2">
                                                         <FiAlertCircle className="w-3 h-3 mr-1" />
                                                         Emergency
-                                                    </span>
+                                                    </Badge>
                                                 )}
-                                                <span className="text-sm font-medium text-gray-500">
+                                                <span className="text-sm font-medium text-muted-foreground">
                                                     {request.animalType}
                                                 </span>
                                             </div>
-                                            <div className="flex items-start space-x-4 flex-wrap">
-                                                <div className="text-sm text-gray-500 flex items-center">
+                                            <div className="flex items-start space-x-4">
+                                                <div className="text-sm text-muted-foreground flex items-center">
                                                     <FiMapPin className="mr-1 h-4 w-4" />
                                                     {request.location.city}, {request.location.state}
                                                 </div>
-                                                <div className="text-sm text-gray-500 flex items-center">
+                                                <div className="text-sm text-muted-foreground flex items-center">
                                                     <FiClock className="mr-1 h-4 w-4" />
                                                     {formatDate(request.createdAt)}
                                                 </div>
@@ -252,9 +275,9 @@ export default function RequestsPage() {
                                             )}
                                         </div>
                                         <div className="mt-4 sm:mt-0">
-                                            <button className="text-blue-500 flex items-center text-sm">
+                                            <Button variant="ghost" size="sm" className="text-primary">
                                                 View Details <FiChevronRight className="ml-1" />
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
@@ -262,84 +285,70 @@ export default function RequestsPage() {
                         </div>
 
                         {/* Pagination */}
-                        <div className="flex justify-center mt-6">
-                            <div className="flex items-center space-x-2">
-                                <button
-                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                    className={`px-3 py-1 rounded border ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`}
-                                >
-                                    Previous
-                                </button>
-                                
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious 
+                                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                                    />
+                                </PaginationItem>
                                 {[...Array(totalPages)].map((_, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => setCurrentPage(i + 1)}
-                                        className={`px-3 py-1 rounded ${currentPage === i + 1 ? 'bg-blue-500 text-white' : 'border hover:bg-gray-100'}`}
-                                    >
-                                        {i + 1}
-                                    </button>
+                                    <PaginationItem key={i}>
+                                        <PaginationLink 
+                                            isActive={currentPage === i + 1}
+                                            onClick={() => setCurrentPage(i + 1)}
+                                        >
+                                            {i + 1}
+                                        </PaginationLink>
+                                    </PaginationItem>
                                 ))}
-                                
-                                <button
-                                    onClick={() => setCurrentPage((prev) => prev < totalPages ? prev + 1 : prev)}
-                                    disabled={currentPage === totalPages}
-                                    className={`px-3 py-1 rounded border ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'}`}
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
+                                <PaginationItem>
+                                    <PaginationNext 
+                                        onClick={() => setCurrentPage((prev) => prev < totalPages ? prev + 1 : prev)}
+                                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
                     </>
                 )}
 
-                {/* Request Details Modal */}
-                {detailsOpen && selectedRequest && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto dark:bg-gray-800">
-                            <div className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center space-x-2">
-                                        <h2 className="text-xl font-bold">Rescue Request</h2>
-                                        {getStatusBadge(selectedRequest.status)}
-                                    </div>
-                                    <div>
-                                        {selectedRequest.emergency && (
-                                            <span className="px-2 py-1 text-xs bg-red-500 text-white rounded-full flex items-center">
-                                                <FiAlertCircle className="w-3 h-3 mr-1" />
-                                                Emergency
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                                <p className="text-sm text-gray-500 mb-6">
-                                    Submitted {formatDate(selectedRequest.createdAt)}
-                                </p>
+                {/* Request Details Dialog */}
+                <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+                    <DialogContent className="max-w-3xl">
+                        {selectedRequest && (
+                            <>
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-2">
+                                            <span>Rescue Request</span>
+                                            {getStatusBadge(selectedRequest.status)}
+                                        </div>
+                                        <div>
+                                            {selectedRequest.emergency && (
+                                                <Badge variant="destructive">
+                                                    <FiAlertCircle className="w-3 h-3 mr-1" />
+                                                    Emergency
+                                                </Badge>
+                                            )}
+                                        </div>
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        Submitted {formatDate(selectedRequest.createdAt)}
+                                    </DialogDescription>
+                                </DialogHeader>
 
-                                <div className="mb-4">
-                                    <div className="flex border-b">
-                                        <button
-                                            className={`px-4 py-2 ${activeTab === 'details' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-                                            onClick={() => setActiveTab('details')}
-                                        >
-                                            Details
-                                        </button>
-                                        <button
-                                            className={`px-4 py-2 ${activeTab === 'timeline' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-500'}`}
-                                            onClick={() => setActiveTab('timeline')}
-                                        >
-                                            Timeline
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {activeTab === 'details' ? (
-                                    <div className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <Tabs defaultValue="details">
+                                    <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="details">Details</TabsTrigger>
+                                        <TabsTrigger value="timeline">Timeline</TabsTrigger>
+                                    </TabsList>
+                                    <TabsContent value="details" className="space-y-4 mt-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <h3 className="text-sm font-medium text-gray-500 mb-2">Animal Information</h3>
-                                                <div className="space-y-2">
+                                                <h3 className="text-sm font-medium text-muted-foreground">Animal Information</h3>
+                                                <div className="mt-2 space-y-2">
                                                     <div className="flex justify-between">
                                                         <span className="text-sm font-medium">Type</span>
                                                         <span>{selectedRequest.animalType}</span>
@@ -376,8 +385,8 @@ export default function RequestsPage() {
                                             </div>
 
                                             <div>
-                                                <h3 className="text-sm font-medium text-gray-500 mb-2">Location Information</h3>
-                                                <div className="space-y-2">
+                                                <h3 className="text-sm font-medium text-muted-foreground">Location Information</h3>
+                                                <div className="mt-2 space-y-2">
                                                     <div className="flex justify-between">
                                                         <span className="text-sm font-medium">City</span>
                                                         <span>{selectedRequest.location.city}</span>
@@ -403,8 +412,8 @@ export default function RequestsPage() {
                                         </div>
 
                                         <div>
-                                            <h3 className="text-sm font-medium text-gray-500 mb-2">Contact Information</h3>
-                                            <div className="space-y-2">
+                                            <h3 className="text-sm font-medium text-muted-foreground">Contact Information</h3>
+                                            <div className="mt-2 space-y-2">
                                                 <div className="flex justify-between">
                                                     <span className="text-sm font-medium">Phone</span>
                                                     <span>{selectedRequest.contactInfo.phone}</span>
@@ -421,18 +430,18 @@ export default function RequestsPage() {
                                         {/* Special needs if any */}
                                         {selectedRequest.animalDetails && selectedRequest.animalDetails.specialNeeds && (
                                             <div>
-                                                <h3 className="text-sm font-medium text-gray-500 mb-2">Special Needs</h3>
-                                                <p className="text-sm">{selectedRequest.animalDetails.specialNeeds}</p>
+                                                <h3 className="text-sm font-medium text-muted-foreground">Special Needs</h3>
+                                                <p className="mt-2 text-sm">{selectedRequest.animalDetails.specialNeeds}</p>
                                             </div>
                                         )}
 
                                         {/* Image gallery if any */}
                                         {selectedRequest.images && selectedRequest.images.length > 0 && (
                                             <div>
-                                                <h3 className="text-sm font-medium text-gray-500 mb-2">Images</h3>
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                <h3 className="text-sm font-medium text-muted-foreground">Images</h3>
+                                                <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-2">
                                                     {selectedRequest.images.map((image, index) => (
-                                                        <div key={index} className="h-24 overflow-hidden rounded-md">
+                                                        <div key={index} className="relative h-24 overflow-hidden rounded-md">
                                                             <img
                                                                 src={image.url}
                                                                 alt={image.caption || `Image ${index + 1}`}
@@ -443,23 +452,23 @@ export default function RequestsPage() {
                                                 </div>
                                             </div>
                                         )}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
+                                    </TabsContent>
+
+                                    <TabsContent value="timeline" className="space-y-4 mt-4">
                                         {selectedRequest.rescueTimeline && selectedRequest.rescueTimeline.length > 0 ? (
                                             <div className="space-y-4">
                                                 {selectedRequest.rescueTimeline.map((item, index) => (
-                                                    <div key={index} className="relative pl-6 pb-4 border-l-2 border-gray-200">
-                                                        <div className="absolute left-[-7px] top-0 bg-blue-500 rounded-full w-3 h-3"></div>
-                                                        <div>
+                                                    <div key={index} className="relative pl-6 pb-4 border-l-2 border-gray-200 dark:border-gray-700">
+                                                        <div className="absolute left-[-7px] top-0 bg-primary rounded-full w-3 h-3"></div>
+                                                        <div className="flex flex-col">
                                                             <span className="text-sm font-medium capitalize">
                                                                 {item.status.replace(/_/g, ' ')}
                                                             </span>
-                                                            <span className="text-xs text-gray-500 block">
+                                                            <span className="text-xs text-muted-foreground">
                                                                 {formatDate(item.timestamp)}
                                                             </span>
                                                             {item.notes && (
-                                                                <p className="text-sm mt-1 text-gray-600">
+                                                                <p className="text-sm mt-1 text-muted-foreground">
                                                                     {item.notes}
                                                                 </p>
                                                             )}
@@ -468,94 +477,88 @@ export default function RequestsPage() {
                                                 ))}
                                             </div>
                                         ) : (
-                                            <div className="text-center py-4 text-gray-500">
+                                            <div className="text-center py-4 text-muted-foreground">
                                                 No timeline events available
                                             </div>
                                         )}
-                                    </div>
-                                )}
+                                    </TabsContent>
+                                </Tabs>
 
-                                <div className="mt-8 flex justify-end space-x-4">
+                                <DialogFooter className="flex-col sm:flex-row gap-2">
                                     {selectedRequest.status === 'pending' && (
-                                        <button
+                                        <Button
                                             onClick={() => handleAcceptRequest(selectedRequest._id)}
                                             disabled={processingAction}
-                                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
                                         >
                                             Accept Request
-                                        </button>
+                                        </Button>
                                     )}
                                     {selectedRequest.status === 'accepted' && (
-                                        <button
+                                        <Button
                                             onClick={openAssignModal}
                                             disabled={processingAction}
-                                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
                                         >
                                             Assign Volunteer
-                                        </button>
+                                        </Button>
                                     )}
-                                    <button
-                                        onClick={() => setDetailsOpen(false)}
-                                        className="px-4 py-2 border rounded hover:bg-gray-100"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                                    <DialogClose asChild>
+                                        <Button variant="outline">Close</Button>
+                                    </DialogClose>
+                                </DialogFooter>
+                            </>
+                        )}
+                    </DialogContent>
+                </Dialog>
 
-                {/* Assign Volunteer Modal */}
-                {assignModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                        <div className="bg-white rounded-lg shadow-lg w-full max-w-md dark:bg-gray-800">
-                            <div className="p-6">
-                                <h2 className="text-xl font-bold mb-4">Assign Volunteer</h2>
-                                <p className="text-gray-500 mb-4">
-                                    Select a volunteer to assign to this rescue request.
-                                </p>
+                {/* Assign Volunteer Dialog */}
+                <Dialog open={assignModalOpen} onOpenChange={setAssignModalOpen}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Assign Volunteer</DialogTitle>
+                            <DialogDescription>
+                                Select a volunteer to assign to this rescue request.
+                            </DialogDescription>
+                        </DialogHeader>
 
-                                <div className="mb-6">
-                                    <select
-                                        value={selectedVolunteer}
-                                        onChange={(e) => setSelectedVolunteer(e.target.value)}
-                                        className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        <option value="">Select a volunteer</option>
+                        <div className="py-4">
+                            <Select
+                                value={selectedVolunteer}
+                                onValueChange={setSelectedVolunteer}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a volunteer" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectGroup>
                                         {volunteers.length > 0 ? (
                                             volunteers.map((volunteer) => (
-                                                <option key={volunteer._id} value={volunteer._id}>
+                                                <SelectItem key={volunteer._id} value={volunteer._id}>
                                                     {volunteer.name}
-                                                </option>
+                                                </SelectItem>
                                             ))
                                         ) : (
-                                            <option value="" disabled>
+                                            <SelectItem value="" disabled>
                                                 No active volunteers available
-                                            </option>
+                                            </SelectItem>
                                         )}
-                                    </select>
-                                </div>
-
-                                <div className="flex justify-end space-x-4">
-                                    <button
-                                        onClick={handleAssignVolunteer}
-                                        disabled={!selectedVolunteer || processingAction}
-                                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-                                    >
-                                        Assign
-                                    </button>
-                                    <button
-                                        onClick={() => setAssignModalOpen(false)}
-                                        className="px-4 py-2 border rounded hover:bg-gray-100"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    </div>
-                )}
+
+                        <DialogFooter>
+                            <Button
+                                onClick={handleAssignVolunteer}
+                                disabled={!selectedVolunteer || processingAction}
+                            >
+                                Assign
+                            </Button>
+                            <Button variant="outline" onClick={() => setAssignModalOpen(false)}>
+                                Cancel
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </ProtectedRoute>
     );

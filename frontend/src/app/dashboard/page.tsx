@@ -8,9 +8,42 @@ import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import volunteerService from '@/utils/volunteerService';
 import rescueRequestService from '@/utils/rescueRequestService';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Define all NGO routes for prefetching
 const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers'];
+
+// Dashboard skeleton component
+const DashboardSkeleton = () => (
+    <div className="space-y-8">
+        <div className="flex items-center justify-between">
+            <Skeleton className="h-12 w-64" />
+            <Skeleton className="h-8 w-8 rounded-full" />
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 min-w-0">
+            {[...Array(3)].map((_, i) => (
+                <div key={i} className="card relative bg-white dark:bg-card-dark">
+                    <div className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-10 rounded-xl" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-8 w-16" />
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+        <div className="card relative bg-white dark:bg-card-dark">
+            <div className="flex items-center gap-3 mb-6">
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-6 w-40" />
+            </div>
+            <div className="space-y-4">
+                <Skeleton className="h-16 w-full" />
+            </div>
+        </div>
+    </div>
+);
 
 // In future, this will be replaced with real-time data
 interface DashboardStats {
@@ -110,16 +143,11 @@ export default function DashboardPage() {
         [router]
     );
 
-    // If loading, show simple loading indicator instead of skeleton
+    // If loading, show skeleton
     if (loading) {
         return (
             <ProtectedRoute type="ngo">
-                <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="text-center">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4 mx-auto"></div>
-                        <p className="text-muted-foreground">Loading dashboard data...</p>
-                    </div>
-                </div>
+                <DashboardSkeleton />
             </ProtectedRoute>
         );
     }
