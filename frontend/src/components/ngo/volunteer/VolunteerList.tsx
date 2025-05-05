@@ -122,7 +122,7 @@ export const VolunteerList = () => {
                     <button
                         onClick={handleRefresh}
                         disabled={loading || refreshing}
-                        className="px-3 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        className="px-3 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-95 transform duration-150"
                     >
                         <FiRefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                         <span className="hidden sm:inline">Refresh</span>
@@ -139,7 +139,7 @@ export const VolunteerList = () => {
 
             {/* Error message */}
             {error && (
-                <div className="p-4 rounded-md bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400">
+                <div className="p-4 rounded-md bg-red-50 border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 shadow-sm">
                     <div className="flex items-center gap-2">
                         <FiAlertTriangle className="w-5 h-5" />
                         <p>{error}</p>
@@ -152,7 +152,7 @@ export const VolunteerList = () => {
 
             {/* Volunteers table */}
             {!loading && !refreshing && volunteers.length === 0 ? (
-                <div className="text-center py-12 border border-dashed border-gray-300 rounded-md dark:border-border-dark">
+                <div className="text-center py-12 border border-dashed border-gray-300 rounded-md dark:border-gray-700 dark:bg-gray-900/50">
                     <p className="text-gray-500 dark:text-gray-400">
                         No volunteers found. Add your first volunteer to get started.
                     </p>
@@ -160,37 +160,37 @@ export const VolunteerList = () => {
             ) : (
                 !loading &&
                 !refreshing && (
-                    <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-300 dark:divide-border-dark">
-                            <thead className="bg-gray-50 dark:bg-card-dark/50">
+                    <div className="overflow-hidden shadow-md dark:shadow-lg dark:shadow-gray-900/30 ring-1 ring-black ring-opacity-5 dark:ring-gray-700 rounded-lg overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+                            <thead className="bg-gray-50 dark:bg-gray-800/90">
                                 <tr>
                                     <th
                                         scope="col"
-                                        className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                        className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
                                     >
                                         Name
                                     </th>
                                     <th
                                         scope="col"
-                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
                                     >
                                         Email
                                     </th>
                                     <th
                                         scope="col"
-                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
                                     >
                                         Status
                                     </th>
                                     <th
                                         scope="col"
-                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
                                     >
                                         Joined
                                     </th>
                                     <th
                                         scope="col"
-                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-300"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
                                     >
                                         Rescues
                                     </th>
@@ -199,9 +199,9 @@ export const VolunteerList = () => {
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-border-dark bg-white dark:bg-card-dark">
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900/95">
                                 {volunteers.map(volunteer => (
-                                    <tr key={volunteer._id}>
+                                    <tr key={volunteer._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors duration-150">
                                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white">
                                             {volunteer.name}
                                         </td>
@@ -210,9 +210,9 @@ export const VolunteerList = () => {
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                                             <span
-                                                className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                                                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
                                                     volunteer.status === 'active'
-                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
                                                         : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                                                 }`}
                                             >
@@ -224,7 +224,7 @@ export const VolunteerList = () => {
                                         </td>
                                         <td className="whitespace-nowrap px-3 py-4 text-sm">
                                             <div className="flex flex-col">
-                                                <span className="text-primary-600 dark:text-theme-nature">
+                                                <span className="text-primary-600 dark:text-green-400">
                                                     {volunteer.activeRescues?.length || 0} Active
                                                 </span>
                                                 <span className="text-theme-heart dark:text-theme-heart">
@@ -235,7 +235,7 @@ export const VolunteerList = () => {
                                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium">
                                             <button
                                                 onClick={() => confirmDelete(volunteer)}
-                                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-1.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                                             >
                                                 <FiTrash2 className="w-5 h-5" />
                                             </button>

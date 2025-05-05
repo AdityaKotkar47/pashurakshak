@@ -116,7 +116,8 @@
 
     /* Dark theme background */
     .dark .content-pattern {
-        background-color: #1a2030;
+        background-color: #151b29;
+        background-image: linear-gradient(to bottom right, rgba(30, 41, 59, 0.4) 0%, rgba(30, 41, 59, 0) 70%);
     }
 }
 
@@ -129,4 +130,12 @@
   body {
     @apply bg-background text-foreground;
     }
+
+  /* Ensure all buttons have pointer cursor */
+  button,
+  [role="button"],
+  .cursor-pointer,
+  a {
+    cursor: pointer !important;
+  }
 }

@@ -65,6 +65,7 @@ export default function RequestsPage() {
     const [requests, setRequests] = useState<RescueRequest[]>([]);
     const [allRequests, setAllRequests] = useState<RescueRequest[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -80,7 +81,12 @@ export default function RequestsPage() {
 
     // Fetch all rescue requests
     const fetchAllRequests = async () => {
-        setLoading(true);
+        if (!isInitialLoad) {
+            setRefreshing(true);
+        } else {
+            setLoading(true);
+        }
+
         try {
             // Fetch all requests without filters
             const response = await rescueRequestService.getRescueRequests(
@@ -97,6 +103,7 @@ export default function RequestsPage() {
             console.error(err);
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
@@ -287,7 +294,7 @@ export default function RequestsPage() {
             <div className="space-y-6">
                 {/* Header Section */}
                 <div className="relative overflow-hidden">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between relative z-10">
                         <div className="space-y-1">
                             <h1 className="text-4xl font-bold bg-gradient-to-r from-theme-nature via-theme-paw to-theme-heart bg-clip-text text-transparent">
                                 Rescue Requests
@@ -296,16 +303,54 @@ export default function RequestsPage() {
                                 Manage and track rescue operations
                             </p>
                         </div>
-                        <Button
-                            onClick={fetchAllRequests}
-                            disabled={loading}
-                            variant="outline"
-                            className="flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-95 transform duration-150 dark:border-gray-700 dark:bg-gray-800/50"
+                        <div
+                            onClick={loading || refreshing ? undefined : fetchAllRequests}
+                            style={{
+                                cursor: loading || refreshing ? 'default' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '0.375rem',
+                                border: '1px solid #e2e8f0',
+                                backgroundColor: 'white',
+                                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                                transition: 'all 150ms',
+                                opacity: loading || refreshing ? 0.5 : 1,
+                                color: 'inherit',
+                                position: 'relative',
+                                zIndex: 50
+                            }}
+                            className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            onMouseOver={(e) => {
+                                if (!loading && !refreshing) {
+                                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                                    const isDarkMode = document.documentElement.classList.contains('dark');
+                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#f7fafc';
+                                }
+                            }}
+                            onMouseOut={(e) => {
+                                if (!loading && !refreshing) {
+                                    e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
+                                    const isDarkMode = document.documentElement.classList.contains('dark');
+                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1a1e2e' : 'white';
+                                }
+                            }}
+                            onMouseDown={(e) => {
+                                if (!loading && !refreshing) {
+                                    e.currentTarget.style.transform = 'scale(0.95)';
+                                }
+                            }}
+                            onMouseUp={(e) => {
+                                if (!loading && !refreshing) {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                }
+                            }}
                         >
-                            <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            <FiRefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                             <span>Refresh</span>
-                        </Button>
-                        <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-theme-nature/20 to-transparent rounded-full blur-3xl dark:from-theme-heart/10" />
+                        </div>
+                        <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-theme-nature/20 to-transparent rounded-full blur-3xl dark:from-theme-heart/10 pointer-events-none" />
                     </div>
                 </div>
 
@@ -359,7 +404,7 @@ export default function RequestsPage() {
                 </div>
 
                 {/* Requests List */}
-                {loading ? (
+                {loading || refreshing ? (
                     <div className="space-y-4">
                         {[...Array(3)].map((_, i) => (
                             <div key={i} className="card dark:bg-gradient-to-br dark:from-card-dark dark:to-card-dark/90">
@@ -386,13 +431,54 @@ export default function RequestsPage() {
                             <p className="text-lg font-medium text-foreground dark:text-foreground-dark">
                                 {error}
                             </p>
-                            <Button
-                                onClick={fetchAllRequests}
-                                variant="outline"
-                                className="mt-4"
+                            <div
+                                onClick={refreshing ? undefined : fetchAllRequests}
+                                style={{
+                                    cursor: refreshing ? 'default' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '0.375rem',
+                                    border: '1px solid #e2e8f0',
+                                    backgroundColor: 'white',
+                                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                                    transition: 'all 150ms',
+                                    opacity: refreshing ? 0.5 : 1,
+                                    color: 'inherit',
+                                    marginTop: '1rem',
+                                    position: 'relative',
+                                    zIndex: 50
+                                }}
+                                className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                onMouseOver={(e) => {
+                                    if (!refreshing) {
+                                        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                                        const isDarkMode = document.documentElement.classList.contains('dark');
+                                        e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#f7fafc';
+                                    }
+                                }}
+                                onMouseOut={(e) => {
+                                    if (!refreshing) {
+                                        e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
+                                        const isDarkMode = document.documentElement.classList.contains('dark');
+                                        e.currentTarget.style.backgroundColor = isDarkMode ? '#1a1e2e' : 'white';
+                                    }
+                                }}
+                                onMouseDown={(e) => {
+                                    if (!refreshing) {
+                                        e.currentTarget.style.transform = 'scale(0.95)';
+                                    }
+                                }}
+                                onMouseUp={(e) => {
+                                    if (!refreshing) {
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                    }
+                                }}
                             >
+                                {refreshing && <FiRefreshCw className="w-4 h-4 animate-spin" />}
                                 Try Again
-                            </Button>
+                            </div>
                         </div>
                     </div>
                 ) : requests.length === 0 ? (
@@ -470,15 +556,16 @@ export default function RequestsPage() {
                             <PaginationContent>
                                 <PaginationItem>
                                     <PaginationPrevious
-                                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        className={`${currentPage === 1 ? 'pointer-events-none opacity-50' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer active:scale-95 transform duration-150'}`}
                                     />
                                 </PaginationItem>
                                 {[...Array(totalPages)].map((_, i) => (
-                                            <PaginationItem key={i + 1}>
+                                    <PaginationItem key={i + 1}>
                                         <PaginationLink
-                                                    onClick={() => setCurrentPage(i + 1)}
+                                            onClick={() => setCurrentPage(i + 1)}
                                             isActive={currentPage === i + 1}
+                                            className={`${currentPage === i + 1 ? '' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 active:scale-95 transform duration-150'}`}
                                         >
                                             {i + 1}
                                         </PaginationLink>
@@ -486,8 +573,8 @@ export default function RequestsPage() {
                                 ))}
                                 <PaginationItem>
                                     <PaginationNext
-                                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        className={`${currentPage === totalPages ? 'pointer-events-none opacity-50' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 cursor-pointer active:scale-95 transform duration-150'}`}
                                     />
                                 </PaginationItem>
                             </PaginationContent>

@@ -297,13 +297,12 @@ export default function DashboardPage() {
         });
 
         // Fetch fresh data
-        fetchDashboardStats();
-        fetchRecentActivity();
-
-        // Reset refreshing state after a short delay to show the animation
-        setTimeout(() => {
+        Promise.all([
+            fetchDashboardStats(),
+            fetchRecentActivity()
+        ]).finally(() => {
             setRefreshing(false);
-        }, 1000);
+        });
     };
 
     // Handle hover-based prefetching
@@ -322,23 +321,60 @@ export default function DashboardPage() {
             <div className="space-y-8">
                 {/* Header Section */}
                 <div className="relative overflow-hidden">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between relative z-10">
                         <div className="space-y-1">
                             <h1 className="text-4xl font-bold bg-gradient-to-r from-theme-nature via-theme-paw to-theme-heart bg-clip-text text-transparent">
                                 Rescue Center
                             </h1>
                         </div>
-                        <Button
-                            onClick={handleRefresh}
-                            disabled={refreshing}
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-2"
+                        <div
+                            onClick={refreshing ? undefined : handleRefresh}
+                            style={{
+                                cursor: refreshing ? 'default' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '0.375rem',
+                                border: '1px solid #e2e8f0',
+                                backgroundColor: 'white',
+                                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                                transition: 'all 150ms',
+                                opacity: refreshing ? 0.5 : 1,
+                                color: 'inherit',
+                                position: 'relative',
+                                zIndex: 50
+                            }}
+                            className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            onMouseOver={(e) => {
+                                if (!refreshing) {
+                                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+                                    const isDarkMode = document.documentElement.classList.contains('dark');
+                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#f7fafc';
+                                }
+                            }}
+                            onMouseOut={(e) => {
+                                if (!refreshing) {
+                                    e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
+                                    const isDarkMode = document.documentElement.classList.contains('dark');
+                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1a1e2e' : 'white';
+                                }
+                            }}
+                            onMouseDown={(e) => {
+                                if (!refreshing) {
+                                    e.currentTarget.style.transform = 'scale(0.95)';
+                                }
+                            }}
+                            onMouseUp={(e) => {
+                                if (!refreshing) {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                }
+                            }}
                         >
                             <FiRefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                             <span>Refresh</span>
-                        </Button>
-                        <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-theme-nature/20 to-transparent rounded-full blur-3xl dark:from-theme-heart/10" />
+                        </div>
+                        <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-theme-nature/20 to-transparent rounded-full blur-3xl dark:from-theme-heart/10 pointer-events-none" />
                     </div>
                 </div>
 
