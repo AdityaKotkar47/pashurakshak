@@ -18,7 +18,6 @@ const DashboardSkeleton = () => (
     <div className="space-y-8">
         <div className="flex items-center justify-between">
             <Skeleton className="h-12 w-64" />
-            <Skeleton className="h-8 w-8 rounded-full" />
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 min-w-0">
             {[...Array(3)].map((_, i) => (

@@ -46,8 +46,8 @@ export default function RequestsPage() {
     const [selectedRequest, setSelectedRequest] = useState<RescueRequest | null>(null);
     const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
     const [selectedVolunteer, setSelectedVolunteer] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
-    const [emergencyFilter, setEmergencyFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [emergencyFilter, setEmergencyFilter] = useState('all');
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [assignModalOpen, setAssignModalOpen] = useState(false);
     const [processingAction, setProcessingAction] = useState(false);
@@ -56,11 +56,11 @@ export default function RequestsPage() {
     const fetchRequests = async () => {
         setLoading(true);
         try {
-            const emergency = emergencyFilter ? emergencyFilter === 'true' : undefined;
+            const emergency = emergencyFilter === 'all' ? undefined : emergencyFilter === 'true';
             const response = await rescueRequestService.getRescueRequests(
                 currentPage,
                 10,
-                statusFilter || undefined,
+                statusFilter === 'all' ? undefined : statusFilter,
                 emergency
             );
             setRequests(response.requests);
@@ -188,7 +188,7 @@ export default function RequestsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="">All Statuses</SelectItem>
+                                        <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="pending">Pending</SelectItem>
                                         <SelectItem value="accepted">Accepted</SelectItem>
                                         <SelectItem value="in_progress">In Progress</SelectItem>
@@ -208,7 +208,7 @@ export default function RequestsPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectGroup>
-                                        <SelectItem value="">All Requests</SelectItem>
+                                        <SelectItem value="all">All Requests</SelectItem>
                                         <SelectItem value="true">Emergency Only</SelectItem>
                                         <SelectItem value="false">Non-Emergency Only</SelectItem>
                                     </SelectGroup>
