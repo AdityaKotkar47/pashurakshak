@@ -11,7 +11,6 @@ const navigation = [
     { name: 'Dashboard', href: '/dashboard', Icon: FiHome },
     { name: 'Rescue Requests', href: '/requests', Icon: PiPawPrintFill },
     { name: 'Volunteers', href: '/volunteers', Icon: FiUsers },
-    { name: 'Animals', href: '/animals', Icon: PiDogFill },
 ];
 
 export function Sidebar() {

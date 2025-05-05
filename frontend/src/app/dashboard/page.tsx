@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { FiActivity, FiHeart, FiUsers } from 'react-icons/fi';
-import { PiDogFill, PiPawPrintFill } from 'react-icons/pi';
+import { PiPawPrintFill } from 'react-icons/pi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import volunteerService from '@/utils/volunteerService';
 import rescueRequestService from '@/utils/rescueRequestService';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatDistanceToNow } from 'date-fns';
 
 // Define all NGO routes for prefetching
 const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers'];
@@ -17,16 +18,26 @@ const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers'];
 const DashboardSkeleton = () => (
     <div className="space-y-8">
         <div className="flex items-center justify-between">
-            <Skeleton className="h-12 w-64" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-theme-nature via-theme-paw to-theme-heart bg-clip-text text-transparent">
+                Rescue Center
+            </h1>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 min-w-0">
             {[...Array(3)].map((_, i) => (
                 <div key={i} className="card relative bg-white dark:bg-card-dark">
                     <div className="flex items-center gap-4">
-                        <Skeleton className="h-10 w-10 rounded-xl" />
-                        <div className="space-y-2">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-8 w-16" />
+                        <div className="p-2 rounded-xl bg-primary-50 text-primary-600 dark:bg-theme-heart/10 dark:text-theme-heart">
+                            {i === 0 ? <PiPawPrintFill className="w-6 h-6" /> :
+                             i === 1 ? <FiUsers className="w-6 h-6" /> :
+                             <FiHeart className="w-6 h-6" />}
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-medium text-muted-foreground dark:text-foreground-dark/60">
+                                {i === 0 ? 'Total Requests' :
+                                 i === 1 ? 'Active Volunteers' :
+                                 'Completed Rescues'}
+                            </h2>
+                            <Skeleton className="mt-1 h-8 w-16" />
                         </div>
                     </div>
                 </div>
@@ -34,11 +45,21 @@ const DashboardSkeleton = () => (
         </div>
         <div className="card relative bg-white dark:bg-card-dark">
             <div className="flex items-center gap-3 mb-6">
-                <Skeleton className="h-5 w-5 rounded-full" />
-                <Skeleton className="h-6 w-40" />
+                <FiActivity className="w-5 h-5 text-primary-600 dark:text-theme-heart" />
+                <h2 className="text-lg font-medium text-foreground dark:text-foreground-dark">
+                    Recent Activity
+                </h2>
             </div>
             <div className="space-y-4">
-                <Skeleton className="h-16 w-full" />
+                {[...Array(3)].map((_, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-3/4" />
+                            <Skeleton className="h-3 w-1/2" />
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
     </div>
@@ -48,8 +69,23 @@ const DashboardSkeleton = () => (
 interface DashboardStats {
     requests: number;
     volunteers: number;
-    animals: number;
     completed: number;
+}
+
+interface RecentActivity {
+    id: string;
+    type: 'rescue_request' | 'volunteer_action';
+    action: string;
+    timestamp: string;
+    details?: {
+        animalType?: string;
+        location?: {
+            city: string;
+            state: string;
+        };
+        volunteerName?: string;
+        notes?: string;
+    };
 }
 
 export default function DashboardPage() {
@@ -57,10 +93,15 @@ export default function DashboardPage() {
     const [stats, setStats] = useState<DashboardStats>({
         requests: 0,
         volunteers: 0,
-        animals: 0,
         completed: 0,
     });
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState({
+        requests: true,
+        volunteers: true,
+        completed: true,
+        activity: true
+    });
+    const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
 
     // Optimized prefetching strategy with Next.js features
     useEffect(() => {
@@ -86,64 +127,105 @@ export default function DashboardPage() {
 
         prefetchAllRoutes();
         fetchDashboardStats();
+        fetchRecentActivity();
     }, [router]);
 
-    // Fetch dashboard statistics
-    const fetchDashboardStats = async () => {
-        setLoading(true);
+    // Fetch recent activity
+    const fetchRecentActivity = async () => {
         try {
-            // Fetch real volunteer count
-            const volunteers = await volunteerService.getVolunteers();
-            
-            // Fetch all rescue requests
-            let totalRequests = 0;
-            let completedRequests = 0;
-            
-            try {
-                // Fetch total requests (all statuses)
-                const allRequests = await rescueRequestService.getRescueRequests(1, 1);
-                totalRequests = allRequests.totalRequests;
-                
-                // Fetch completed requests
-                const completedRequestsData = await rescueRequestService.getRescueRequests(1, 1, 'completed');
-                completedRequests = completedRequestsData.totalRequests;
-            } catch (error) {
-                console.error('Error fetching rescue requests stats:', error);
-            }
+            // Fetch both rescue requests and volunteers
+            const [rescueResponse, volunteersResponse] = await Promise.all([
+                rescueRequestService.getRescueRequests(1, 5),
+                volunteerService.getVolunteers()
+            ]);
 
-            setStats({
-                requests: totalRequests,
-                volunteers: volunteers.length,
-                animals: 0, // Animals is not tracked in the system per updated requirements
-                completed: completedRequests,
-            });
+            // Process rescue request activities
+            const rescueActivities = rescueResponse.requests.map(request => ({
+                id: request._id,
+                type: 'rescue_request' as const,
+                action: request.status,
+                timestamp: request.updatedAt,
+                details: {
+                    animalType: request.animalType,
+                    location: request.location,
+                    notes: request.rescueTimeline[request.rescueTimeline.length - 1]?.notes
+                }
+            }));
+
+            // Process only recent volunteer actions (last 5 active volunteers)
+            const volunteerActivities = volunteersResponse
+                .filter(volunteer => volunteer.status === 'active')
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .slice(0, 5)
+                .map(volunteer => ({
+                    id: volunteer._id,
+                    type: 'volunteer_action' as const,
+                    action: 'joined',
+                    timestamp: volunteer.createdAt,
+                    details: {
+                        volunteerName: volunteer.name
+                    }
+                }));
+
+            // Combine and sort all activities by timestamp
+            const allActivities = [...rescueActivities, ...volunteerActivities]
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                .slice(0, 5);
+
+            setRecentActivity(allActivities);
         } catch (error) {
-            console.error('Error fetching dashboard stats:', error);
-            // Fallback to sample data if API fails
-            setStats({
-                requests: 0,
-                volunteers: 0,
-                animals: 0,
-                completed: 0,
-            });
+            console.error('Error fetching recent activity:', error);
         } finally {
-            setLoading(false);
+            setLoading(prev => ({ ...prev, activity: false }));
         }
+    };
+
+    // Fetch dashboard statistics independently
+    const fetchDashboardStats = async () => {
+        // Fetch volunteer count independently
+        volunteerService.getVolunteers()
+            .then(volunteers => {
+                setStats(prev => ({ ...prev, volunteers: volunteers.length }));
+                setLoading(prev => ({ ...prev, volunteers: false }));
+            })
+            .catch(error => {
+                console.error('Error fetching volunteers:', error);
+                setLoading(prev => ({ ...prev, volunteers: false }));
+            });
+
+        // Fetch total requests independently
+        rescueRequestService.getRescueRequests(1, 1)
+            .then(allRequests => {
+                setStats(prev => ({ ...prev, requests: allRequests.totalRequests }));
+                setLoading(prev => ({ ...prev, requests: false }));
+            })
+            .catch(error => {
+                console.error('Error fetching total requests:', error);
+                setLoading(prev => ({ ...prev, requests: false }));
+            });
+
+        // Fetch completed requests independently
+        rescueRequestService.getRescueRequests(1, 1, 'completed')
+            .then(completedRequests => {
+                setStats(prev => ({ ...prev, completed: completedRequests.totalRequests }));
+                setLoading(prev => ({ ...prev, completed: false }));
+            })
+            .catch(error => {
+                console.error('Error fetching completed requests:', error);
+                setLoading(prev => ({ ...prev, completed: false }));
+            });
     };
 
     // Handle hover-based prefetching
     const handleHover = useCallback(
         (href: string) => {
-            // Prefetch the route again to ensure it's fresh in the cache
             router.prefetch(href);
-            // In future: Trigger data prefetch for the route
-            // prefetchRouteData(href);
         },
         [router]
     );
 
-    // If loading, show skeleton
-    if (loading) {
+    // If any data is still loading, show skeleton
+    if (Object.values(loading).some(Boolean)) {
         return (
             <ProtectedRoute type="ngo">
                 <DashboardSkeleton />
@@ -184,9 +266,13 @@ export default function DashboardPage() {
                                     <h2 className="text-sm font-medium text-muted-foreground dark:text-foreground-dark/60">
                                         Total Requests
                                     </h2>
-                                    <p className="mt-1 text-3xl font-bold text-primary-600 dark:text-theme-heart">
-                                        {stats.requests}
-                                    </p>
+                                    {loading.requests ? (
+                                        <Skeleton className="mt-1 h-8 w-16" />
+                                    ) : (
+                                        <p className="mt-1 text-3xl font-bold text-primary-600 dark:text-theme-heart">
+                                            {stats.requests}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -208,9 +294,13 @@ export default function DashboardPage() {
                                     <h2 className="text-sm font-medium text-muted-foreground dark:text-foreground-dark/60">
                                         Active Volunteers
                                     </h2>
-                                    <p className="mt-1 text-3xl font-bold text-secondary-600 dark:text-theme-paw">
-                                        {stats.volunteers}
-                                    </p>
+                                    {loading.volunteers ? (
+                                        <Skeleton className="mt-1 h-8 w-16" />
+                                    ) : (
+                                        <p className="mt-1 text-3xl font-bold text-secondary-600 dark:text-theme-paw">
+                                            {stats.volunteers}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -232,9 +322,13 @@ export default function DashboardPage() {
                                     <h2 className="text-sm font-medium text-muted-foreground dark:text-foreground-dark/60">
                                         Completed Rescues
                                     </h2>
-                                    <p className="mt-1 text-3xl font-bold text-theme-heart dark:text-theme-heart">
-                                        {stats.completed}
-                                    </p>
+                                    {loading.completed ? (
+                                        <Skeleton className="mt-1 h-8 w-16" />
+                                    ) : (
+                                        <p className="mt-1 text-3xl font-bold text-theme-heart dark:text-theme-heart">
+                                            {stats.completed}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -252,9 +346,55 @@ export default function DashboardPage() {
                             </h2>
                         </div>
                         <div className="space-y-4">
-                            <p className="text-sm text-muted-foreground dark:text-foreground-dark/60">
-                                No recent activity
-                            </p>
+                            {loading.activity ? (
+                                [...Array(3)].map((_, i) => (
+                                    <div key={i} className="flex items-start gap-3">
+                                        <Skeleton className="h-8 w-8 rounded-full" />
+                                        <div className="flex-1 space-y-2">
+                                            <Skeleton className="h-4 w-3/4" />
+                                            <Skeleton className="h-3 w-1/2" />
+                                        </div>
+                                    </div>
+                                ))
+                            ) : recentActivity.length === 0 ? (
+                                <p className="text-sm text-muted-foreground dark:text-foreground-dark/60">
+                                    No recent activity
+                                </p>
+                            ) : (
+                                recentActivity.map((activity) => (
+                                    <div key={activity.id} className="flex items-start gap-3">
+                                        <div className="p-2 rounded-full bg-primary-50 text-primary-600 dark:bg-theme-heart/10 dark:text-theme-heart">
+                                            {activity.type === 'rescue_request' ? (
+                                                <PiPawPrintFill className="w-4 h-4" />
+                                            ) : (
+                                                <FiUsers className="w-4 h-4" />
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-foreground dark:text-foreground-dark">
+                                                {activity.type === 'rescue_request' ? (
+                                                    `${activity.details?.animalType} rescue ${activity.action.replace(/_/g, ' ')}`
+                                                ) : (
+                                                    `New volunteer ${activity.details?.volunteerName} joined`
+                                                )}
+                                            </p>
+                                            {activity.type === 'rescue_request' && activity.details?.location && (
+                                                <p className="text-sm text-muted-foreground dark:text-foreground-dark/60">
+                                                    {activity.details.location.city}, {activity.details.location.state}
+                                                </p>
+                                            )}
+                                            {activity.details?.notes && (
+                                                <p className="text-sm text-muted-foreground dark:text-foreground-dark/60 mt-1">
+                                                    {activity.details.notes}
+                                                </p>
+                                            )}
+                                            <p className="text-xs text-muted-foreground dark:text-foreground-dark/40 mt-1">
+                                                {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>
