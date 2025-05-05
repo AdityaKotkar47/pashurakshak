@@ -32,6 +32,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import { toast } from '@/hooks/use-toast';
 import { FiAlertCircle, FiCalendar, FiChevronRight, FiClock, FiMapPin, FiUser, FiFilter, FiRefreshCw } from 'react-icons/fi';
 import { PiPawPrintFill } from 'react-icons/pi';
@@ -303,53 +304,11 @@ export default function RequestsPage() {
                                 Manage and track rescue operations
                             </p>
                         </div>
-                        <div
-                            onClick={loading || refreshing ? undefined : fetchAllRequests}
-                            style={{
-                                cursor: loading || refreshing ? 'default' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.5rem 1rem',
-                                borderRadius: '0.375rem',
-                                border: '1px solid #e2e8f0',
-                                backgroundColor: 'white',
-                                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                                transition: 'all 150ms',
-                                opacity: loading || refreshing ? 0.5 : 1,
-                                color: 'inherit',
-                                position: 'relative',
-                                zIndex: 50
-                            }}
-                            className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                            onMouseOver={(e) => {
-                                if (!loading && !refreshing) {
-                                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                                    const isDarkMode = document.documentElement.classList.contains('dark');
-                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#f7fafc';
-                                }
-                            }}
-                            onMouseOut={(e) => {
-                                if (!loading && !refreshing) {
-                                    e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
-                                    const isDarkMode = document.documentElement.classList.contains('dark');
-                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1a1e2e' : 'white';
-                                }
-                            }}
-                            onMouseDown={(e) => {
-                                if (!loading && !refreshing) {
-                                    e.currentTarget.style.transform = 'scale(0.95)';
-                                }
-                            }}
-                            onMouseUp={(e) => {
-                                if (!loading && !refreshing) {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                }
-                            }}
-                        >
-                            <FiRefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                            <span>Refresh</span>
-                        </div>
+                        <RefreshButton
+                            onClick={fetchAllRequests}
+                            isRefreshing={refreshing}
+                            disabled={loading}
+                        />
                         <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-theme-nature/20 to-transparent rounded-full blur-3xl dark:from-theme-heart/10 pointer-events-none" />
                     </div>
                 </div>
@@ -431,53 +390,11 @@ export default function RequestsPage() {
                             <p className="text-lg font-medium text-foreground dark:text-foreground-dark">
                                 {error}
                             </p>
-                            <div
-                                onClick={refreshing ? undefined : fetchAllRequests}
-                                style={{
-                                    cursor: refreshing ? 'default' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    padding: '0.5rem 1rem',
-                                    borderRadius: '0.375rem',
-                                    border: '1px solid #e2e8f0',
-                                    backgroundColor: 'white',
-                                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                                    transition: 'all 150ms',
-                                    opacity: refreshing ? 0.5 : 1,
-                                    color: 'inherit',
-                                    marginTop: '1rem',
-                                    position: 'relative',
-                                    zIndex: 50
-                                }}
-                                className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                                onMouseOver={(e) => {
-                                    if (!refreshing) {
-                                        e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                                        const isDarkMode = document.documentElement.classList.contains('dark');
-                                        e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#f7fafc';
-                                    }
-                                }}
-                                onMouseOut={(e) => {
-                                    if (!refreshing) {
-                                        e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
-                                        const isDarkMode = document.documentElement.classList.contains('dark');
-                                        e.currentTarget.style.backgroundColor = isDarkMode ? '#1a1e2e' : 'white';
-                                    }
-                                }}
-                                onMouseDown={(e) => {
-                                    if (!refreshing) {
-                                        e.currentTarget.style.transform = 'scale(0.95)';
-                                    }
-                                }}
-                                onMouseUp={(e) => {
-                                    if (!refreshing) {
-                                        e.currentTarget.style.transform = 'scale(1)';
-                                    }
-                                }}
-                            >
-                                {refreshing && <FiRefreshCw className="w-4 h-4 animate-spin" />}
-                                Try Again
+                            <div className="mt-4">
+                                <RefreshButton
+                                    onClick={fetchAllRequests}
+                                    isRefreshing={refreshing}
+                                />
                             </div>
                         </div>
                     </div>

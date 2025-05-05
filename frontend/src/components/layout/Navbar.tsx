@@ -77,7 +77,7 @@ export function Navbar() {
     };
 
     return (
-        <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-lg dark:border-border-dark/50 dark:bg-[#1a2030]">
+        <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-lg dark:border-border-dark/50 dark:bg-[#1a2030]/95">
             <div className="w-full">
                 <div className="flex h-16 items-center justify-between px-6">
                     <div className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export function Navbar() {
                         {userType && (
                             <button
                                 onClick={handleLogout}
-                                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-50 text-primary-600 hover:bg-primary-100 transition-colors duration-200 dark:bg-theme-heart/10 dark:text-theme-heart dark:hover:bg-theme-heart/20"
+                                className="logout-button"
                             >
                                 <FiLogOut className="w-5 h-5" />
                                 <span>Logout</span>

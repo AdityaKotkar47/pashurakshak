@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { getFromCache, saveToCache, clearCacheByPrefix, CACHE_DURATIONS } from '@/utils/cacheUtils';
 import { Button } from '@/components/ui/button';
+import { RefreshButton } from '@/components/ui/refresh-button';
 
 // Define all NGO routes for prefetching
 const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers'];
@@ -327,53 +328,10 @@ export default function DashboardPage() {
                                 Rescue Center
                             </h1>
                         </div>
-                        <div
-                            onClick={refreshing ? undefined : handleRefresh}
-                            style={{
-                                cursor: refreshing ? 'default' : 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                padding: '0.5rem 1rem',
-                                borderRadius: '0.375rem',
-                                border: '1px solid #e2e8f0',
-                                backgroundColor: 'white',
-                                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                                transition: 'all 150ms',
-                                opacity: refreshing ? 0.5 : 1,
-                                color: 'inherit',
-                                position: 'relative',
-                                zIndex: 50
-                            }}
-                            className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-                            onMouseOver={(e) => {
-                                if (!refreshing) {
-                                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                                    const isDarkMode = document.documentElement.classList.contains('dark');
-                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1e293b' : '#f7fafc';
-                                }
-                            }}
-                            onMouseOut={(e) => {
-                                if (!refreshing) {
-                                    e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
-                                    const isDarkMode = document.documentElement.classList.contains('dark');
-                                    e.currentTarget.style.backgroundColor = isDarkMode ? '#1a1e2e' : 'white';
-                                }
-                            }}
-                            onMouseDown={(e) => {
-                                if (!refreshing) {
-                                    e.currentTarget.style.transform = 'scale(0.95)';
-                                }
-                            }}
-                            onMouseUp={(e) => {
-                                if (!refreshing) {
-                                    e.currentTarget.style.transform = 'scale(1)';
-                                }
-                            }}
-                        >
-                            <FiRefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                            <span>Refresh</span>
-                        </div>
+                        <RefreshButton
+                            onClick={handleRefresh}
+                            isRefreshing={refreshing}
+                        />
                         <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-theme-nature/20 to-transparent rounded-full blur-3xl dark:from-theme-heart/10 pointer-events-none" />
                     </div>
                 </div>

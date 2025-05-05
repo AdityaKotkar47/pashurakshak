@@ -122,14 +122,14 @@ export const VolunteerList = () => {
                     <button
                         onClick={handleRefresh}
                         disabled={loading || refreshing}
-                        className="px-3 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-colors flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-95 transform duration-150"
+                        className="px-3 py-2 rounded-md bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-[#1e2538] dark:text-white dark:border-gray-700 dark:hover:bg-[#232a40] transition-colors flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-95 transform duration-150"
                     >
                         <FiRefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                         <span className="hidden sm:inline">Refresh</span>
                     </button>
                     <button
                         onClick={() => setShowAddModal(true)}
-                        className="px-4 py-2 rounded-md bg-theme-nature text-white hover:bg-theme-nature/90 dark:bg-theme-heart dark:hover:bg-theme-heart/90 transition-colors flex items-center gap-2"
+                        className="px-4 py-2 rounded-md bg-theme-nature text-white hover:bg-theme-nature/90 dark:bg-red-500 dark:hover:bg-red-600 transition-colors flex items-center gap-2"
                     >
                         <FiUserPlus className="w-4 h-4" />
                         <span>Add Volunteer</span>
@@ -162,35 +162,35 @@ export const VolunteerList = () => {
                 !refreshing && (
                     <div className="overflow-hidden shadow-md dark:shadow-lg dark:shadow-gray-900/30 ring-1 ring-black ring-opacity-5 dark:ring-gray-700 rounded-lg overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
-                            <thead className="bg-gray-50 dark:bg-gray-800/90">
+                            <thead className="bg-gray-50 dark:bg-[#1e2538]">
                                 <tr>
                                     <th
                                         scope="col"
-                                        className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
+                                        className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-white"
                                     >
                                         Name
                                     </th>
                                     <th
                                         scope="col"
-                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
                                     >
                                         Email
                                     </th>
                                     <th
                                         scope="col"
-                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
                                     >
                                         Status
                                     </th>
                                     <th
                                         scope="col"
-                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
                                     >
                                         Joined
                                     </th>
                                     <th
                                         scope="col"
-                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-200"
+                                        className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-white"
                                     >
                                         Rescues
                                     </th>
@@ -199,9 +199,9 @@ export const VolunteerList = () => {
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900/95">
+                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-[#1a2030]">
                                 {volunteers.map(volunteer => (
-                                    <tr key={volunteer._id} className="hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors duration-150">
+                                    <tr key={volunteer._id} className="hover:bg-gray-50 dark:hover:bg-[#232a40] transition-colors duration-150">
                                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-white">
                                             {volunteer.name}
                                         </td>
@@ -227,7 +227,7 @@ export const VolunteerList = () => {
                                                 <span className="text-primary-600 dark:text-green-400">
                                                     {volunteer.activeRescues?.length || 0} Active
                                                 </span>
-                                                <span className="text-theme-heart dark:text-theme-heart">
+                                                <span className="text-theme-heart dark:text-red-400">
                                                     {volunteer.completedRescues || 0} Completed
                                                 </span>
                                             </div>
@@ -313,7 +313,7 @@ export const VolunteerList = () => {
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-md bg-theme-nature text-white hover:bg-theme-nature/90 dark:bg-theme-heart dark:hover:bg-theme-heart/90 focus:outline-none"
+                                    className="px-4 py-2 rounded-md bg-theme-nature text-white hover:bg-theme-nature/90 dark:bg-red-500 dark:hover:bg-red-600 focus:outline-none"
                                     disabled={loading}
                                 >
                                     {loading ? 'Adding...' : 'Add Volunteer'}

@@ -53,15 +53,15 @@ export function Sidebar() {
                             onMouseEnter={() => handleHover(item.href)}
                             className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
                                 isActive
-                                    ? 'bg-gradient-to-r from-theme-nature/20 to-primary-100 text-primary-700 shadow-sm dark:from-theme-heart/20 dark:to-theme-heart/5 dark:text-theme-heart'
-                                    : 'text-gray-600 hover:bg-gradient-to-r hover:from-theme-nature/10 hover:to-transparent hover:text-primary-600 dark:text-gray-400 dark:hover:from-theme-heart/10 dark:hover:to-transparent dark:hover:text-theme-heart'
+                                    ? 'bg-gradient-to-r from-theme-nature/20 to-primary-100 text-primary-700 shadow-sm dark:bg-[#3a2a3a] dark:text-[#ff6b6b]'
+                                    : 'text-gray-600 hover:bg-gradient-to-r hover:from-theme-nature/10 hover:to-transparent hover:text-primary-600 dark:text-gray-300 dark:hover:bg-[#2a2a3a]/50 dark:hover:text-white'
                             }`}
                         >
                             <IconComponent
                                 className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${
                                     isActive
-                                        ? 'text-primary-600 dark:text-theme-heart'
-                                        : 'text-gray-500 group-hover:text-primary-500 dark:text-gray-400 dark:group-hover:text-theme-heart'
+                                        ? 'text-primary-600 dark:text-[#ff6b6b]'
+                                        : 'text-gray-500 group-hover:text-primary-500 dark:text-gray-400 dark:group-hover:text-[#ff6b6b]'
                                 }`}
                             />
                             <span>{item.name}</span>
