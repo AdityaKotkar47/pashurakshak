@@ -203,7 +203,7 @@ export default function DashboardPage() {
                 console.error('Error fetching total requests:', error);
                 setLoading(prev => ({ ...prev, requests: false }));
             });
-                
+
         // Fetch completed requests independently
         rescueRequestService.getRescueRequests(1, 1, 'completed')
             .then(completedRequests => {
@@ -361,39 +361,50 @@ export default function DashboardPage() {
                                     No recent activity
                                 </p>
                             ) : (
-                                recentActivity.map((activity) => (
-                                    <div key={activity.id} className="flex items-start gap-3">
-                                        <div className="p-2 rounded-full bg-primary-50 text-primary-600 dark:bg-theme-heart/10 dark:text-theme-heart">
-                                            {activity.type === 'rescue_request' ? (
-                                                <PiPawPrintFill className="w-4 h-4" />
-                                            ) : (
-                                                <FiUsers className="w-4 h-4" />
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-foreground dark:text-foreground-dark">
+                                recentActivity.map((activity) => {
+                                    // Determine the target URL based on activity type
+                                    const targetUrl = activity.type === 'rescue_request'
+                                        ? `/requests?id=${activity.id}`
+                                        : `/volunteers`;
+
+                                    return (
+                                        <div
+                                            key={activity.id}
+                                            className="flex items-start gap-3 p-3 -mx-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/30 cursor-pointer transition-colors"
+                                            onClick={() => router.push(targetUrl)}
+                                        >
+                                            <div className="p-2 rounded-full bg-primary-50 text-primary-600 dark:bg-theme-heart/10 dark:text-theme-heart">
                                                 {activity.type === 'rescue_request' ? (
-                                                    `${activity.details?.animalType} rescue ${activity.action.replace(/_/g, ' ')}`
+                                                    <PiPawPrintFill className="w-4 h-4" />
                                                 ) : (
-                                                    `New volunteer ${activity.details?.volunteerName} joined`
+                                                    <FiUsers className="w-4 h-4" />
                                                 )}
-                                            </p>
-                                            {activity.type === 'rescue_request' && activity.details?.location && (
-                                                <p className="text-sm text-muted-foreground dark:text-foreground-dark/60">
-                                                    {activity.details.location.city}, {activity.details.location.state}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-foreground dark:text-foreground-dark">
+                                                    {activity.type === 'rescue_request' ? (
+                                                        `${activity.details?.animalType} rescue ${activity.action.replace(/_/g, ' ')}`
+                                                    ) : (
+                                                        `New volunteer ${activity.details?.volunteerName} joined`
+                                                    )}
                                                 </p>
-                                            )}
-                                            {activity.details?.notes && (
-                                                <p className="text-sm text-muted-foreground dark:text-foreground-dark/60 mt-1">
-                                                    {activity.details.notes}
+                                                {activity.type === 'rescue_request' && activity.details?.location && (
+                                                    <p className="text-sm text-muted-foreground dark:text-foreground-dark/60">
+                                                        {activity.details.location.city}, {activity.details.location.state}
+                                                    </p>
+                                                )}
+                                                {activity.details?.notes && (
+                                                    <p className="text-sm text-muted-foreground dark:text-foreground-dark/60 mt-1">
+                                                        {activity.details.notes}
+                                                    </p>
+                                                )}
+                                                <p className="text-xs text-muted-foreground dark:text-foreground-dark/40 mt-1">
+                                                    {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                                                 </p>
-                                            )}
-                                            <p className="text-xs text-muted-foreground dark:text-foreground-dark/40 mt-1">
-                                                {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-                                            </p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
+                                    );
+                                })
                             )}
                         </div>
                     </div>

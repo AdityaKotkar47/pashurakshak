@@ -116,17 +116,55 @@ export default function RequestsPage() {
         fetchRequests();
     }, [currentPage, statusFilter, emergencyFilter]);
 
+    // Handle URL parameters for direct navigation to a specific request
+    useEffect(() => {
+        const handleUrlParams = async () => {
+            // Check if we have an ID in the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const requestId = urlParams.get('id');
+
+            if (requestId) {
+                try {
+                    // Fetch the specific request
+                    const request = await rescueRequestService.getRescueRequestById(requestId);
+                    if (request) {
+                        // Open the details modal with this request
+                        setSelectedRequest(request);
+                        setDetailsOpen(true);
+
+                        // Clean up the URL parameter after handling it
+                        window.history.replaceState({}, '', '/requests');
+                    }
+                } catch (err) {
+                    console.error('Failed to load request from URL parameter:', err);
+                }
+            }
+        };
+
+        handleUrlParams();
+    }, []);
+
     // Handle accept request
     const handleAcceptRequest = async (id: string) => {
         setProcessingAction(true);
         try {
-            await rescueRequestService.acceptRescueRequest(id);
+            const updatedRequest = await rescueRequestService.acceptRescueRequest(id);
             toast({
                 title: 'Success',
                 description: 'Rescue request accepted successfully',
             });
-            fetchRequests();
-            setDetailsOpen(false);
+
+            // Update the request in the local state instead of refetching
+            setRequests(prevRequests =>
+                prevRequests.map(req =>
+                    req._id === id ? updatedRequest : req
+                )
+            );
+
+            // Update the selected request if it's open in the modal
+            if (selectedRequest && selectedRequest._id === id) {
+                setSelectedRequest(updatedRequest);
+            }
         } catch (err) {
             toast({
                 title: 'Error',
@@ -144,14 +182,24 @@ export default function RequestsPage() {
 
         setProcessingAction(true);
         try {
-            await rescueRequestService.assignVolunteerToRequest(selectedRequest._id, selectedVolunteer);
+            const updatedRequest = await rescueRequestService.assignVolunteerToRequest(selectedRequest._id, selectedVolunteer);
             toast({
                 title: 'Success',
                 description: 'Volunteer assigned successfully',
             });
-            fetchRequests();
+
+            // Update the request in the local state instead of refetching
+            setRequests(prevRequests =>
+                prevRequests.map(req =>
+                    req._id === selectedRequest._id ? updatedRequest : req
+                )
+            );
+
+            // Update the selected request
+            setSelectedRequest(updatedRequest);
+
+            // Close the assign modal but keep the details modal open
             setAssignModalOpen(false);
-            setDetailsOpen(false);
         } catch (err) {
             toast({
                 title: 'Error',
