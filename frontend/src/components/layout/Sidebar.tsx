@@ -39,7 +39,7 @@ export function Sidebar() {
     );
 
     return (
-        <div className="h-full w-64 border-r border-border/50 bg-gradient-to-b from-white via-white to-theme-nature/5 dark:border-border-dark dark:from-card-dark dark:via-card-dark dark:to-theme-heart/5 flex flex-col">
+        <div className="h-full w-64 border-r border-border/50 bg-gradient-to-b from-background via-background to-theme-nature/5 dark:border-border-dark/50 dark:from-[#1a2030] dark:via-[#1a2030] dark:to-[#1a2030] flex flex-col">
             <nav className="flex-1 flex flex-col gap-2 p-6 overflow-y-auto">
                 {navigation.map(item => {
                     const isActive = pathname === item.href;
@@ -64,7 +64,7 @@ export function Sidebar() {
                                         : 'text-gray-500 group-hover:text-primary-500 dark:text-gray-400 dark:group-hover:text-theme-heart'
                                 }`}
                             />
-                            <span className="font-medium">{item.name}</span>
+                            <span>{item.name}</span>
                         </Link>
                     );
                 })}

@@ -78,12 +78,12 @@ interface RecentActivity {
     action: string;
     timestamp: string;
     details?: {
-        animalType?: string;
-        location?: {
-            city: string;
-            state: string;
-        };
-        volunteerName?: string;
+    animalType?: string;
+    location?: {
+        city: string;
+        state: string;
+    };
+    volunteerName?: string;
         notes?: string;
     };
 }
@@ -146,7 +146,7 @@ export default function DashboardPage() {
                 action: request.status,
                 timestamp: request.updatedAt,
                 details: {
-                    animalType: request.animalType,
+                animalType: request.animalType,
                     location: request.location,
                     notes: request.rescueTimeline[request.rescueTimeline.length - 1]?.notes
                 }
@@ -163,7 +163,7 @@ export default function DashboardPage() {
                     action: 'joined',
                     timestamp: volunteer.createdAt,
                     details: {
-                        volunteerName: volunteer.name
+                    volunteerName: volunteer.name
                     }
                 }));
 
@@ -203,7 +203,7 @@ export default function DashboardPage() {
                 console.error('Error fetching total requests:', error);
                 setLoading(prev => ({ ...prev, requests: false }));
             });
-
+                
         // Fetch completed requests independently
         rescueRequestService.getRescueRequests(1, 1, 'completed')
             .then(completedRequests => {
@@ -269,9 +269,9 @@ export default function DashboardPage() {
                                     {loading.requests ? (
                                         <Skeleton className="mt-1 h-8 w-16" />
                                     ) : (
-                                        <p className="mt-1 text-3xl font-bold text-primary-600 dark:text-theme-heart">
-                                            {stats.requests}
-                                        </p>
+                                    <p className="mt-1 text-3xl font-bold text-primary-600 dark:text-theme-heart">
+                                        {stats.requests}
+                                    </p>
                                     )}
                                 </div>
                             </div>
@@ -297,9 +297,9 @@ export default function DashboardPage() {
                                     {loading.volunteers ? (
                                         <Skeleton className="mt-1 h-8 w-16" />
                                     ) : (
-                                        <p className="mt-1 text-3xl font-bold text-secondary-600 dark:text-theme-paw">
-                                            {stats.volunteers}
-                                        </p>
+                                    <p className="mt-1 text-3xl font-bold text-secondary-600 dark:text-theme-paw">
+                                        {stats.volunteers}
+                                    </p>
                                     )}
                                 </div>
                             </div>
@@ -325,9 +325,9 @@ export default function DashboardPage() {
                                     {loading.completed ? (
                                         <Skeleton className="mt-1 h-8 w-16" />
                                     ) : (
-                                        <p className="mt-1 text-3xl font-bold text-theme-heart dark:text-theme-heart">
-                                            {stats.completed}
-                                        </p>
+                                    <p className="mt-1 text-3xl font-bold text-theme-heart dark:text-theme-heart">
+                                        {stats.completed}
+                                    </p>
                                     )}
                                 </div>
                             </div>

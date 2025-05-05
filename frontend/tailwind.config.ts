@@ -60,13 +60,13 @@ export default {
     			},
     			card: {
     				DEFAULT: 'hsl(var(--card))',
-    				dark: '#242B3D',
+    				dark: '#1e2538',
     				foreground: 'hsl(var(--card-foreground))'
     			},
     			muted: {
     				DEFAULT: 'hsl(var(--muted))',
     				foreground: 'hsl(var(--muted-foreground))',
-    				dark: '#2D364A'
+    				dark: '#232a40'
     			},
     			border: 'hsl(var(--border))',
     			theme: {

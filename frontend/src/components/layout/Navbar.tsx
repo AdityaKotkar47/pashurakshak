@@ -77,10 +77,10 @@ export function Navbar() {
     };
 
     return (
-        <nav className="sticky top-0 z-50 w-full border-b border-border dark:border-border-dark bg-card/95 backdrop-blur-lg dark:bg-gradient-to-r dark:from-card-dark dark:to-muted-dark/95">
+        <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-lg dark:border-border-dark/50 dark:bg-[#1a2030]">
             <div className="w-full">
-                <div className="flex h-16 items-center justify-between">
-                    <div className="flex items-center gap-2 pl-6">
+                <div className="flex h-16 items-center justify-between px-6">
+                    <div className="flex items-center gap-2">
                         <Link href="/" prefetch={true} className="brand-link group">
                             <div className="flex flex-col leading-none font-montserrat">
                                 <div className="flex flex-col bg-gradient-to-br from-theme-nature via-primary-500 to-theme-heart bg-clip-text text-transparent dark:from-theme-paw dark:via-theme-sky dark:to-theme-heart">
@@ -93,15 +93,15 @@ export function Navbar() {
                         </Link>
                         {userType && (
                             <>
-                                <div className="h-8 w-[1px] bg-border dark:bg-border-dark mx-2" />
-                                <span className="text-sm font-medium text-muted-foreground/70 dark:text-foreground-dark/50">
+                                <div className="h-8 w-[1px] bg-border/50 dark:bg-border-dark/50 mx-2" />
+                                <span className="text-sm font-medium text-muted-foreground dark:text-foreground-dark/60">
                                     {userType === 'admin' ? 'Admin' : 'NGO'}
                                 </span>
                             </>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-4 pr-6">
+                    <div className="flex items-center gap-4">
                         {renderThemeToggle()}
 
                         {userType && (

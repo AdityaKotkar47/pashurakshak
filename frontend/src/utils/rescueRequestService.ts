@@ -116,7 +116,7 @@ const rescueRequestService = {
         try {
             getNgoAuthToken();
 
-            const response = await axios.put(`${API_URL}/api/rescue/${id}/assign-volunteer`, { volunteerId });
+            const response = await axios.put(`${API_URL}/api/rescue/requests/${id}/assign-volunteer`, { volunteerId });
             return response.data.data;
         } catch (error) {
             console.error(`Error assigning volunteer to rescue request ${id}:`, error);
@@ -156,4 +156,4 @@ const rescueRequestService = {
     }
 };
 
-export default rescueRequestService; 
+export default rescueRequestService;
