@@ -33,7 +33,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/hooks/use-toast';
-import { FiAlertCircle, FiCalendar, FiChevronRight, FiClock, FiMapPin, FiUser, FiFilter } from 'react-icons/fi';
+import { FiAlertCircle, FiCalendar, FiChevronRight, FiClock, FiMapPin, FiUser, FiFilter, FiRefreshCw } from 'react-icons/fi';
 import { PiPawPrintFill } from 'react-icons/pi';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -63,6 +63,7 @@ const formatDate = (date: string) => {
 
 export default function RequestsPage() {
     const [requests, setRequests] = useState<RescueRequest[]>([]);
+    const [allRequests, setAllRequests] = useState<RescueRequest[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -75,26 +76,62 @@ export default function RequestsPage() {
     const [detailsOpen, setDetailsOpen] = useState(false);
     const [assignModalOpen, setAssignModalOpen] = useState(false);
     const [processingAction, setProcessingAction] = useState(false);
+    const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-    // Fetch rescue requests
-    const fetchRequests = async () => {
+    // Fetch all rescue requests
+    const fetchAllRequests = async () => {
         setLoading(true);
         try {
-            const emergency = emergencyFilter === 'all' ? undefined : emergencyFilter === 'true';
+            // Fetch all requests without filters
             const response = await rescueRequestService.getRescueRequests(
-                currentPage,
-                4,
-                statusFilter === 'all' ? undefined : statusFilter,
-                emergency
+                1,
+                100 // Fetch a large number to get most/all requests
             );
-            setRequests(response.requests);
-            setTotalPages(response.totalPages);
+            setAllRequests(response.requests);
+            setIsInitialLoad(false);
+
+            // Apply current filters to the fetched data
+            applyFilters(response.requests);
         } catch (err) {
             setError('Failed to load rescue requests');
             console.error(err);
         } finally {
             setLoading(false);
         }
+    };
+
+    // Apply filters to the already loaded data
+    const applyFilters = (requestsToFilter = allRequests) => {
+        let filteredRequests = [...requestsToFilter];
+
+        // Apply status filter
+        if (statusFilter !== 'all') {
+            filteredRequests = filteredRequests.filter(req => req.status === statusFilter);
+        }
+
+        // Apply emergency filter
+        if (emergencyFilter !== 'all') {
+            const isEmergency = emergencyFilter === 'true';
+            filteredRequests = filteredRequests.filter(req => req.emergency === isEmergency);
+        }
+
+        // Calculate pagination
+        const itemsPerPage = 4;
+        const totalFilteredItems = filteredRequests.length;
+        const calculatedTotalPages = Math.max(1, Math.ceil(totalFilteredItems / itemsPerPage));
+
+        // Adjust current page if it's now out of bounds
+        const adjustedCurrentPage = Math.min(currentPage, calculatedTotalPages);
+        if (adjustedCurrentPage !== currentPage) {
+            setCurrentPage(adjustedCurrentPage);
+        }
+
+        // Apply pagination to filtered results
+        const startIndex = (adjustedCurrentPage - 1) * itemsPerPage;
+        const paginatedRequests = filteredRequests.slice(startIndex, startIndex + itemsPerPage);
+
+        setRequests(paginatedRequests);
+        setTotalPages(calculatedTotalPages);
     };
 
     // Fetch volunteers for dropdown
@@ -112,9 +149,17 @@ export default function RequestsPage() {
         }
     };
 
+    // Initial data load
     useEffect(() => {
-        fetchRequests();
-    }, [currentPage, statusFilter, emergencyFilter]);
+        fetchAllRequests();
+    }, []);
+
+    // Apply filters when filter values or pagination changes
+    useEffect(() => {
+        if (!isInitialLoad) {
+            applyFilters();
+        }
+    }, [statusFilter, emergencyFilter, currentPage, isInitialLoad]);
 
     // Handle URL parameters for direct navigation to a specific request
     useEffect(() => {
@@ -154,7 +199,14 @@ export default function RequestsPage() {
                 description: 'Rescue request accepted successfully',
             });
 
-            // Update the request in the local state instead of refetching
+            // Update the request in both local states
+            setAllRequests(prevRequests =>
+                prevRequests.map(req =>
+                    req._id === id ? updatedRequest : req
+                )
+            );
+
+            // Update the filtered requests
             setRequests(prevRequests =>
                 prevRequests.map(req =>
                     req._id === id ? updatedRequest : req
@@ -188,7 +240,14 @@ export default function RequestsPage() {
                 description: 'Volunteer assigned successfully',
             });
 
-            // Update the request in the local state instead of refetching
+            // Update the request in both local states
+            setAllRequests(prevRequests =>
+                prevRequests.map(req =>
+                    req._id === selectedRequest._id ? updatedRequest : req
+                )
+            );
+
+            // Update the filtered requests
             setRequests(prevRequests =>
                 prevRequests.map(req =>
                     req._id === selectedRequest._id ? updatedRequest : req
@@ -228,15 +287,24 @@ export default function RequestsPage() {
             <div className="space-y-6">
                 {/* Header Section */}
                 <div className="relative overflow-hidden">
-                <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between">
                         <div className="space-y-1">
                             <h1 className="text-4xl font-bold bg-gradient-to-r from-theme-nature via-theme-paw to-theme-heart bg-clip-text text-transparent">
-                        Rescue Requests
-                    </h1>
+                                Rescue Requests
+                            </h1>
                             <p className="text-sm text-muted-foreground dark:text-foreground-dark/60">
                                 Manage and track rescue operations
                             </p>
                         </div>
+                        <Button
+                            onClick={fetchAllRequests}
+                            disabled={loading}
+                            variant="outline"
+                            className="flex items-center gap-2 cursor-pointer shadow-sm hover:shadow-md active:scale-95 transform duration-150 dark:border-gray-700 dark:bg-gray-800/50"
+                        >
+                            <FiRefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                            <span>Refresh</span>
+                        </Button>
                         <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-theme-nature/20 to-transparent rounded-full blur-3xl dark:from-theme-heart/10" />
                     </div>
                 </div>
@@ -319,7 +387,7 @@ export default function RequestsPage() {
                                 {error}
                             </p>
                             <Button
-                                onClick={fetchRequests}
+                                onClick={fetchAllRequests}
                                 variant="outline"
                                 className="mt-4"
                             >

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { FiActivity, FiHeart, FiUsers } from 'react-icons/fi';
+import { FiActivity, FiHeart, FiUsers, FiRefreshCw } from 'react-icons/fi';
 import { PiPawPrintFill } from 'react-icons/pi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,8 @@ import volunteerService from '@/utils/volunteerService';
 import rescueRequestService from '@/utils/rescueRequestService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
+import { getFromCache, saveToCache, clearCacheByPrefix, CACHE_DURATIONS } from '@/utils/cacheUtils';
+import { Button } from '@/components/ui/button';
 
 // Define all NGO routes for prefetching
 const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers'];
@@ -101,6 +103,7 @@ export default function DashboardPage() {
         completed: true,
         activity: true
     });
+    const [refreshing, setRefreshing] = useState(false);
     const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
 
     // Optimized prefetching strategy with Next.js features
@@ -130,9 +133,17 @@ export default function DashboardPage() {
         fetchRecentActivity();
     }, [router]);
 
-    // Fetch recent activity
+    // Fetch recent activity with caching
     const fetchRecentActivity = async () => {
         try {
+            // Check cache first
+            const cachedActivities = getFromCache<RecentActivity[]>('dashboard_activity', CACHE_DURATIONS.SHORT);
+            if (cachedActivities) {
+                setRecentActivity(cachedActivities);
+                setLoading(prev => ({ ...prev, activity: false }));
+                return; // Use cached data and exit early
+            }
+
             // Fetch both rescue requests and volunteers
             const [rescueResponse, volunteersResponse] = await Promise.all([
                 rescueRequestService.getRescueRequests(1, 5),
@@ -173,6 +184,9 @@ export default function DashboardPage() {
                 .slice(0, 5);
 
             setRecentActivity(allActivities);
+
+            // Cache the result
+            saveToCache('dashboard_activity', allActivities);
         } catch (error) {
             console.error('Error fetching recent activity:', error);
         } finally {
@@ -180,40 +194,116 @@ export default function DashboardPage() {
         }
     };
 
-    // Fetch dashboard statistics independently
+    // Fetch dashboard statistics independently with improved caching
     const fetchDashboardStats = async () => {
-        // Fetch volunteer count independently
-        volunteerService.getVolunteers()
-            .then(volunteers => {
-                setStats(prev => ({ ...prev, volunteers: volunteers.length }));
-                setLoading(prev => ({ ...prev, volunteers: false }));
-            })
-            .catch(error => {
+        // Use separate functions to fetch each stat independently and in parallel
+        const fetchVolunteers = async () => {
+            try {
+                // Check cache first
+                const cachedCount = getFromCache<number>('dashboard_volunteers', CACHE_DURATIONS.MEDIUM);
+                if (cachedCount !== null) {
+                    setStats(prev => ({ ...prev, volunteers: cachedCount }));
+                    setLoading(prev => ({ ...prev, volunteers: false }));
+                    return; // Use cached data and exit early
+                }
+
+                // Fetch fresh data if no cache or cache is stale
+                const volunteers = await volunteerService.getVolunteers();
+                const count = volunteers.length;
+
+                // Update state
+                setStats(prev => ({ ...prev, volunteers: count }));
+
+                // Cache the result
+                saveToCache('dashboard_volunteers', count);
+            } catch (error) {
                 console.error('Error fetching volunteers:', error);
+            } finally {
                 setLoading(prev => ({ ...prev, volunteers: false }));
-            });
+            }
+        };
 
-        // Fetch total requests independently
-        rescueRequestService.getRescueRequests(1, 1)
-            .then(allRequests => {
-                setStats(prev => ({ ...prev, requests: allRequests.totalRequests }));
-                setLoading(prev => ({ ...prev, requests: false }));
-            })
-            .catch(error => {
+        const fetchTotalRequests = async () => {
+            try {
+                // Check cache first
+                const cachedCount = getFromCache<number>('dashboard_requests', CACHE_DURATIONS.MEDIUM);
+                if (cachedCount !== null) {
+                    setStats(prev => ({ ...prev, requests: cachedCount }));
+                    setLoading(prev => ({ ...prev, requests: false }));
+                    return; // Use cached data and exit early
+                }
+
+                // Fetch fresh data if no cache or cache is stale
+                const allRequests = await rescueRequestService.getRescueRequests(1, 1);
+                const count = allRequests.totalRequests;
+
+                // Update state
+                setStats(prev => ({ ...prev, requests: count }));
+
+                // Cache the result
+                saveToCache('dashboard_requests', count);
+            } catch (error) {
                 console.error('Error fetching total requests:', error);
+            } finally {
                 setLoading(prev => ({ ...prev, requests: false }));
-            });
+            }
+        };
 
-        // Fetch completed requests independently
-        rescueRequestService.getRescueRequests(1, 1, 'completed')
-            .then(completedRequests => {
-                setStats(prev => ({ ...prev, completed: completedRequests.totalRequests }));
-                setLoading(prev => ({ ...prev, completed: false }));
-            })
-            .catch(error => {
+        const fetchCompletedRequests = async () => {
+            try {
+                // Check cache first
+                const cachedCount = getFromCache<number>('dashboard_completed', CACHE_DURATIONS.MEDIUM);
+                if (cachedCount !== null) {
+                    setStats(prev => ({ ...prev, completed: cachedCount }));
+                    setLoading(prev => ({ ...prev, completed: false }));
+                    return; // Use cached data and exit early
+                }
+
+                // Fetch fresh data if no cache or cache is stale
+                const completedRequests = await rescueRequestService.getRescueRequests(1, 1, 'completed');
+                const count = completedRequests.totalRequests;
+
+                // Update state
+                setStats(prev => ({ ...prev, completed: count }));
+
+                // Cache the result
+                saveToCache('dashboard_completed', count);
+            } catch (error) {
                 console.error('Error fetching completed requests:', error);
+            } finally {
                 setLoading(prev => ({ ...prev, completed: false }));
-            });
+            }
+        };
+
+        // Start all fetches in parallel
+        fetchVolunteers();
+        fetchTotalRequests();
+        fetchCompletedRequests();
+    };
+
+    // Handle manual refresh
+    const handleRefresh = () => {
+        setRefreshing(true);
+
+        // Clear all dashboard caches
+        clearCacheByPrefix('dashboard_');
+
+        // Reset loading states
+        setLoading({
+            requests: true,
+            volunteers: true,
+            completed: true,
+            activity: true
+        });
+
+        // Fetch fresh data
+        fetchDashboardStats();
+        fetchRecentActivity();
+
+        // Reset refreshing state after a short delay to show the animation
+        setTimeout(() => {
+            setRefreshing(false);
+        }, 1000);
     };
 
     // Handle hover-based prefetching
@@ -224,14 +314,8 @@ export default function DashboardPage() {
         [router]
     );
 
-    // If any data is still loading, show skeleton
-    if (Object.values(loading).some(Boolean)) {
-        return (
-            <ProtectedRoute type="ngo">
-                <DashboardSkeleton />
-            </ProtectedRoute>
-        );
-    }
+    // We no longer need this since we'll show each section independently
+    // as its data becomes available
 
     return (
         <ProtectedRoute type="ngo">
@@ -244,6 +328,16 @@ export default function DashboardPage() {
                                 Rescue Center
                             </h1>
                         </div>
+                        <Button
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            variant="outline"
+                            size="sm"
+                            className="flex items-center gap-2"
+                        >
+                            <FiRefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                            <span>Refresh</span>
+                        </Button>
                         <div className="hidden sm:block absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-theme-nature/20 to-transparent rounded-full blur-3xl dark:from-theme-heart/10" />
                     </div>
                 </div>
