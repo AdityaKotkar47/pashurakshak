@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { FiActivity, FiHeart, FiUsers, FiRefreshCw } from 'react-icons/fi';
+import { FiActivity, FiHeart, FiUsers } from 'react-icons/fi';
 import { PiPawPrintFill } from 'react-icons/pi';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,62 +11,10 @@ import rescueRequestService from '@/utils/rescueRequestService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { getFromCache, saveToCache, clearCacheByPrefix, CACHE_DURATIONS } from '@/utils/cacheUtils';
-import { Button } from '@/components/ui/button';
 import { RefreshButton } from '@/components/ui/refresh-button';
 
 // Define all NGO routes for prefetching
 const NGO_ROUTES = ['/', '/dashboard', '/requests', '/volunteers'];
-
-// Dashboard skeleton component
-const DashboardSkeleton = () => (
-    <div className="space-y-8">
-        <div className="flex items-center justify-between">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-theme-nature via-theme-paw to-theme-heart bg-clip-text text-transparent">
-                Rescue Center
-            </h1>
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 min-w-0">
-            {[...Array(3)].map((_, i) => (
-                <div key={i} className="card relative bg-white dark:bg-card-dark">
-                    <div className="flex items-center gap-4">
-                        <div className="p-2 rounded-xl bg-primary-50 text-primary-600 dark:bg-theme-heart/10 dark:text-theme-heart">
-                            {i === 0 ? <PiPawPrintFill className="w-6 h-6" /> :
-                             i === 1 ? <FiUsers className="w-6 h-6" /> :
-                             <FiHeart className="w-6 h-6" />}
-                        </div>
-                        <div>
-                            <h2 className="text-sm font-medium text-muted-foreground dark:text-foreground-dark/60">
-                                {i === 0 ? 'Total Requests' :
-                                 i === 1 ? 'Active Volunteers' :
-                                 'Completed Rescues'}
-                            </h2>
-                            <Skeleton className="mt-1 h-8 w-16" />
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </div>
-        <div className="card relative bg-white dark:bg-card-dark">
-            <div className="flex items-center gap-3 mb-6">
-                <FiActivity className="w-5 h-5 text-primary-600 dark:text-theme-heart" />
-                <h2 className="text-lg font-medium text-foreground dark:text-foreground-dark">
-                    Recent Activity
-                </h2>
-            </div>
-            <div className="space-y-4">
-                {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <div className="flex-1 space-y-2">
-                            <Skeleton className="h-4 w-3/4" />
-                            <Skeleton className="h-3 w-1/2" />
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    </div>
-);
 
 // In future, this will be replaced with real-time data
 interface DashboardStats {

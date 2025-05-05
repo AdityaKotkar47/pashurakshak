@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { FiHome, FiUsers } from 'react-icons/fi';
-import { PiDogFill, PiPawPrintFill } from 'react-icons/pi';
+import { PiPawPrintFill } from 'react-icons/pi';
 import { useEffect, useCallback } from 'react';
 
 // Define all navigation items including potential future routes

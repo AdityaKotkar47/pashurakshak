@@ -125,7 +125,20 @@ const rescueRequestService = {
     },
 
     // Get timeline for a rescue request
-    async getRescueRequestTimeline(id: string): Promise<{ id: string; status: string; timeline: any[]; assignedTo?: any }> {
+    async getRescueRequestTimeline(id: string): Promise<{
+        id: string;
+        status: string;
+        timeline: Array<{
+            status: string;
+            timestamp: string;
+            notes?: string;
+        }>;
+        assignedTo?: {
+            ngo?: string;
+            volunteer?: string;
+            assignedAt?: string;
+        }
+    }> {
         try {
             // Use NGO token by default, fall back to admin token if needed
             const ngoToken = getNgoAuthToken();

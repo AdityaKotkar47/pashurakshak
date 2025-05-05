@@ -34,10 +34,11 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { toast } from '@/hooks/use-toast';
-import { FiAlertCircle, FiCalendar, FiChevronRight, FiClock, FiMapPin, FiUser, FiFilter, FiRefreshCw } from 'react-icons/fi';
+import { FiAlertCircle, FiChevronRight, FiClock, FiMapPin } from 'react-icons/fi';
 import { PiPawPrintFill } from 'react-icons/pi';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import Image from 'next/image';
 
 // Helper function to get status badge
 const getStatusBadge = (status: string) => {
@@ -160,6 +161,7 @@ export default function RequestsPage() {
     // Initial data load
     useEffect(() => {
         fetchAllRequests();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Apply filters when filter values or pagination changes
@@ -167,6 +169,7 @@ export default function RequestsPage() {
         if (!isInitialLoad) {
             applyFilters();
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [statusFilter, emergencyFilter, currentPage, isInitialLoad]);
 
     // Handle URL parameters for direct navigation to a specific request
@@ -225,7 +228,8 @@ export default function RequestsPage() {
             if (selectedRequest && selectedRequest._id === id) {
                 setSelectedRequest(updatedRequest);
             }
-        } catch (err) {
+        } catch (error) {
+            console.error('Failed to accept rescue request:', error);
             toast({
                 title: 'Error',
                 description: 'Failed to accept rescue request',
@@ -267,7 +271,8 @@ export default function RequestsPage() {
 
             // Close the assign modal but keep the details modal open
             setAssignModalOpen(false);
-        } catch (err) {
+        } catch (error) {
+            console.error('Failed to assign volunteer:', error);
             toast({
                 title: 'Error',
                 description: 'Failed to assign volunteer',
@@ -624,10 +629,12 @@ export default function RequestsPage() {
                                                             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                                     {selectedRequest.images.map((image, index) => (
                                                                     <div key={index} className="relative aspect-square rounded-lg overflow-hidden">
-                                                            <img
+                                                            <Image
                                                                 src={image.url}
                                                                 alt={image.caption || `Image ${index + 1}`}
-                                                                            className="object-cover w-full h-full"
+                                                                fill
+                                                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                                                className="object-cover"
                                                             />
                                                                         {image.caption && (
                                                                             <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-2">
