@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { FiHome, FiUsers } from 'react-icons/fi';
-import { PiDogFill, PiPawPrintFill } from 'react-icons/pi';
+import { PiPawPrintFill } from 'react-icons/pi';
 import { useEffect, useCallback } from 'react';
 
 // Define all navigation items including potential future routes
@@ -11,7 +11,6 @@ const navigation = [
     { name: 'Dashboard', href: '/dashboard', Icon: FiHome },
     { name: 'Rescue Requests', href: '/requests', Icon: PiPawPrintFill },
     { name: 'Volunteers', href: '/volunteers', Icon: FiUsers },
-    { name: 'Animals', href: '/animals', Icon: PiDogFill },
 ];
 
 export function Sidebar() {
@@ -40,7 +39,7 @@ export function Sidebar() {
     );
 
     return (
-        <div className="h-full w-64 border-r border-border/50 bg-gradient-to-b from-white via-white to-theme-nature/5 dark:border-border-dark dark:from-card-dark dark:via-card-dark dark:to-theme-heart/5 flex flex-col">
+        <div className="h-full w-64 border-r border-border/50 bg-gradient-to-b from-background via-background to-theme-nature/5 dark:border-border-dark/50 dark:from-[#1a2030] dark:via-[#1a2030] dark:to-[#1a2030] flex flex-col">
             <nav className="flex-1 flex flex-col gap-2 p-6 overflow-y-auto">
                 {navigation.map(item => {
                     const isActive = pathname === item.href;
@@ -54,18 +53,18 @@ export function Sidebar() {
                             onMouseEnter={() => handleHover(item.href)}
                             className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
                                 isActive
-                                    ? 'bg-gradient-to-r from-theme-nature/20 to-primary-100 text-primary-700 shadow-sm dark:from-theme-heart/20 dark:to-theme-heart/5 dark:text-theme-heart'
-                                    : 'text-gray-600 hover:bg-gradient-to-r hover:from-theme-nature/10 hover:to-transparent hover:text-primary-600 dark:text-gray-400 dark:hover:from-theme-heart/10 dark:hover:to-transparent dark:hover:text-theme-heart'
+                                    ? 'bg-gradient-to-r from-theme-nature/20 to-primary-100 text-primary-700 shadow-sm dark:bg-[#3a2a3a] dark:text-[#ff6b6b]'
+                                    : 'text-gray-600 hover:bg-gradient-to-r hover:from-theme-nature/10 hover:to-transparent hover:text-primary-600 dark:text-gray-300 dark:hover:bg-[#2a2a3a]/50 dark:hover:text-white'
                             }`}
                         >
                             <IconComponent
                                 className={`h-5 w-5 transition-transform duration-300 group-hover:scale-110 ${
                                     isActive
-                                        ? 'text-primary-600 dark:text-theme-heart'
-                                        : 'text-gray-500 group-hover:text-primary-500 dark:text-gray-400 dark:group-hover:text-theme-heart'
+                                        ? 'text-primary-600 dark:text-[#ff6b6b]'
+                                        : 'text-gray-500 group-hover:text-primary-500 dark:text-gray-400 dark:group-hover:text-[#ff6b6b]'
                                 }`}
                             />
-                            <span className="font-medium">{item.name}</span>
+                            <span>{item.name}</span>
                         </Link>
                     );
                 })}
