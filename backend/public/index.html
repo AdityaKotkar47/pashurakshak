@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PashuRakshak API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .api-box {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .api-url {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 10px 0;
+            border-left: 3px solid #3498db;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        #test-result {
+            margin-top: 10px;
+            min-height: 50px;
+        }
+    </style>
+</head>
+<body>
+    <h1>PashuRakshak API</h1>
+    <div class="api-box">
+        <h2>API Status</h2>
+        <p>This is the base API for the PashuRakshak application. The API provides endpoints for animal rescue operations.</p>
+        <div class="api-url">
+            GET /api/volunteers/public-test
+        </div>
+        <button onclick="testApi()">Test API Connection</button>
+        <div id="test-result"></div>
+    </div>
+
+    <div class="api-box">
+        <h2>Direct Access Endpoints (No Auth Required)</h2>
+        <p>These special endpoints bypass all authentication for testing:</p>
+        <div class="api-url">
+            GET /api/volunteers/direct-profile
+        </div>
+        <button onclick="testDirectProfile()">Test Direct Profile</button>
+        <div id="direct-profile-result"></div>
+        
+        <div class="api-url" style="margin-top: 20px;">
+            GET /api/volunteers/direct-missions
+        </div>
+        <button onclick="testDirectMissions()">Test Direct Missions</button>
+        <div id="direct-missions-result"></div>
+    </div>
+
+    <div class="api-box">
+        <h2>Mobile-friendly Endpoints</h2>
+        <p>These endpoints are optimized for mobile applications with improved security handling:</p>
+        <ul>
+            <li><div class="api-url">POST /api/volunteers/m-login</div></li>
+            <li><div class="api-url">GET /api/volunteers/m-profile</div></li>
+            <li><div class="api-url">GET /api/volunteers/m-missions</div></li>
+        </ul>
+    </div>
+
+    <div class="api-box">
+        <h2>Debug Endpoints</h2>
+        <p>These endpoints can be used to troubleshoot authentication issues:</p>
+        <ul>
+            <li><div class="api-url">GET /api/volunteers/token-info</div></li>
+            <li><div class="api-url">GET /api/volunteers/verify-token</div></li>
+        </ul>
+    </div>
+
+    <script>
+        async function testApi() {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.innerHTML = 'Testing connection...';
+            
+            try {
+                const response = await fetch('/api/volunteers/public-test');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <pre style="color: red">Error: ${error.message}</pre>
+                `;
+            }
+        }
+
+        async function testDirectProfile() {
+            const resultDiv = document.getElementById('direct-profile-result');
+            resultDiv.innerHTML = 'Testing direct profile access...';
+            
+            try {
+                const response = await fetch('/api/volunteers/direct-profile');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <pre style="color: red">Error: ${error.message}</pre>
+                `;
+            }
+        }
+        
+        async function testDirectMissions() {
+            const resultDiv = document.getElementById('direct-missions-result');
+            resultDiv.innerHTML = 'Testing direct missions access...';
+            
+            try {
+                const response = await fetch('/api/volunteers/direct-missions');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `

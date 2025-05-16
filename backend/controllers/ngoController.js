@@ -5,8 +5,11 @@ const crypto = require('crypto');
 
 // Generate JWT Token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
+  // Use the full JWT_SECRET to match the auth middleware
+  const secret = process.env.JWT_SECRET;
+  return jwt.sign({ id, role: 'ngo' }, secret, {
     expiresIn: '30d',
+    algorithm: 'HS256'
   });
 };
 

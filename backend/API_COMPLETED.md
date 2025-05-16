@@ -586,24 +586,6 @@ http://localhost:5000
     }
     ```
 
-````
-- **Error Response**: Status 404
-  ```json
-  {
-    "success": false,
-    "message": "NGO not found"
-  }
-````
-
-OR Status 400
-
-```json
-{
-    "success": false,
-    "message": "NGO is already approved"
-}
-```
-
 ## NGO APIs
 
 ### Get NGO Profile
@@ -647,37 +629,410 @@ OR Status 400
     }
     ```
 
-````
-- **Error Response**: Status 401
-  ```json
-  {
-    "success": false,
-    "message": "Not authorized, no token"
-  }
-````
+## Mobile App API Endpoints
 
-### Get NGO Status
+### Volunteer Mobile API Endpoints
 
--   **Endpoint**: `GET /api/ngo/status/:id`
--   **Description**: Check the status of an NGO registration using its ID
+#### Get Volunteer Profile
+
+-   **Endpoint**: `GET /api/volunteer/profile`
+-   **Description**: Get the logged-in volunteer's profile
+-   **Headers**:
+    ```
+    Authorization: Bearer <volunteer_token>
+    ```
 -   **Success Response**: Status 200
     ```json
     {
         "success": true,
         "data": {
-            "name": "Animal Welfare NGO",
-            "status": "pending",
-            "createdAt": "2023-01-01T00:00:00.000Z"
+            "_id": "12345",
+            "name": "Volunteer Name",
+            "email": "volunteer@example.com",
+            "ngo": {
+                "_id": "67890",
+                "name": "Animal Welfare NGO"
+            },
+            "status": "active",
+            "completedRescues": 3,
+            "activeRescues": [
+                {
+                    "_id": "rescue_id_1",
+                    "animalType": "Dog",
+                    "status": "in_progress"
+                }
+            ]
         }
     }
     ```
--   **Error Response**: Status 404
+-   **Error Response**: Status 401
+  ```json
+  {
+    "success": false,
+    "message": "Not authorized, no token"
+  }
+    ```
+
+#### Get Assigned Rescue Missions
+
+-   **Endpoint**: `GET /api/volunteer/missions`
+-   **Description**: Get all rescue missions assigned to the volunteer
+-   **Headers**:
+    ```
+    Authorization: Bearer <volunteer_token>
+    ```
+-   **Success Response**: Status 200
+    ```json
+    {
+        "success": true,
+        "count": 2,
+        "data": [
+            {
+                "_id": "rescue_id_1",
+                "animalType": "Dog",
+                "animalDetails": {
+                    "condition": "Injured",
+                    "specialNeeds": "Leg injury"
+                },
+                "location": {
+                    "address": "123 Park Street",
+                    "landmark": "Near City Park",
+                    "city": "Mumbai",
+                    "state": "Maharashtra",
+                    "coordinates": {
+                        "latitude": 19.0728,
+                        "longitude": 72.8826
+                    }
+                },
+                "status": "in_progress",
+                "emergency": true,
+                "contactInfo": {
+                    "name": "John Doe",
+                    "phone": "9876543210"
+                },
+                "rescueTimeline": [
+                    {
+                        "status": "request_received",
+                        "timestamp": "2023-04-01T12:00:00.000Z",
+                        "notes": "Rescue request received"
+                    },
+                    {
+                        "status": "ngo_assigned",
+                        "timestamp": "2023-04-01T12:30:00.000Z",
+                        "notes": "Request accepted by NGO: Animal Welfare NGO"
+                    },
+                    {
+                        "status": "volunteer_assigned",
+                        "timestamp": "2023-04-01T13:00:00.000Z",
+                        "notes": "Volunteer Volunteer Name assigned to the rescue"
+                    }
+                ]
+            },
+            {
+                "_id": "rescue_id_2",
+                "animalType": "Cat",
+                "status": "accepted",
+                "emergency": false
+                // Additional mission details...
+            }
+        ]
+    }
+    ```
+-   **Error Response**: Status 401/404
     ```json
     {
         "success": false,
-        "message": "NGO not found"
+        "message": "Not authorized, no token"
     }
     ```
+
+#### Update Mission Status
+
+-   **Endpoint**: `PUT /api/volunteer/missions/:id/status`
+-   **Description**: Update the status of a rescue mission
+-   **Headers**:
+    ```
+    Authorization: Bearer <volunteer_token>
+    Content-Type: application/json
+    ```
+-   **Request Body**:
+    ```json
+    {
+        "status": "reached_location",
+        "notes": "Arrived at the location, searching for the animal"
+    }
+    ```
+-   **Valid Status Values**: 
+    - `volunteer_dispatched` - Volunteer has been dispatched to the location
+    - `reached_location` - Volunteer has reached the rescue location
+    - `animal_rescued` - Animal has been successfully rescued
+    - `returning_to_center` - Volunteer is returning with the rescued animal
+    - `treatment_started` - Treatment has begun for the rescued animal
+-   **Success Response**: Status 200
+    ```json
+    {
+        "success": true,
+        "message": "Mission status updated successfully",
+        "data": {
+            "_id": "rescue_id_1",
+            "status": "in_progress",
+            "rescueTimeline": [
+                // Previous timeline entries...
+                {
+                    "status": "reached_location",
+                    "timestamp": "2023-04-01T14:30:00.000Z",
+                    "notes": "Arrived at the location, searching for the animal"
+                }
+            ]
+        }
+    }
+    ```
+-   **Error Response**: Status 400/401/404
+    ```json
+    {
+        "success": false,
+        "message": "Invalid status. Must be one of: volunteer_dispatched, reached_location, animal_rescued, returning_to_center, treatment_started"
+    }
+    ```
+    OR
+    ```json
+    {
+        "success": false,
+        "message": "Rescue mission not found or not assigned to you"
+    }
+    ```
+
+#### Add Notes to Mission
+
+-   **Endpoint**: `POST /api/volunteer/missions/:id/notes`
+-   **Description**: Add notes to a rescue mission
+-   **Headers**:
+    ```
+    Authorization: Bearer <volunteer_token>
+    Content-Type: application/json
+    ```
+-   **Request Body**:
+    ```json
+    {
+        "notes": "Animal is hiding under a car, trying to coax it out"
+    }
+    ```
+-   **Success Response**: Status 200
+    ```json
+    {
+        "success": true,
+        "message": "Notes added successfully",
+        "data": {
+            "_id": "rescue_id_1",
+            "rescueTimeline": [
+                // Previous timeline entries...
+                {
+                    "status": "reached_location", 
+                    "timestamp": "2023-04-01T14:45:00.000Z",
+                    "notes": "Animal is hiding under a car, trying to coax it out"
+                }
+            ]
+        }
+    }
+    ```
+-   **Error Response**: Status 400/401/404
+    ```json
+    {
+        "success": false,
+        "message": "Notes cannot be empty"
+    }
+    ```
+    OR
+    ```json
+    {
+        "success": false,
+        "message": "Rescue mission not found or not assigned to you"
+    }
+    ```
+
+### User Mobile API Endpoints
+
+#### Get User's Rescue Requests
+
+-   **Endpoint**: `GET /api/rescue/requests/user/:userId`
+-   **Description**: Get all rescue requests submitted by a user
+-   **Headers**:
+    ```
+    Authorization: Bearer <user_token>
+    ```
+-   **Query Parameters**:
+    - `page` (optional): Page number for pagination (default: 1)
+    - `limit` (optional): Number of requests per page (default: 10)
+-   **Success Response**: Status 200
+    ```json
+    {
+        "success": true,
+        "data": {
+            "requests": [
+                {
+                    "_id": "request_id_1",
+                    "animalType": "Dog",
+                    "location": {
+                        "city": "Mumbai",
+                        "state": "Maharashtra"
+                    },
+                    "status": "in_progress",
+                    "emergency": true,
+                    "createdAt": "2023-04-01T10:00:00.000Z",
+                    "assignedTo": {
+                        "ngo": {
+                            "_id": "67890",
+                            "name": "Animal Welfare NGO"
+                        },
+                        "volunteer": {
+                            "_id": "12345",
+                            "name": "Volunteer Name"
+                        },
+                        "assignedAt": "2023-04-01T12:30:00.000Z"
+                    }
+                },
+                {
+                    "_id": "request_id_2",
+                    "animalType": "Cat",
+            "status": "pending",
+                    "emergency": false,
+                    "createdAt": "2023-03-30T15:00:00.000Z"
+                }
+            ],
+            "currentPage": 1,
+            "totalPages": 1,
+            "totalRequests": 2
+        }
+    }
+    ```
+-   **Error Response**: Status 401/403
+    ```json
+    {
+        "success": false,
+        "message": "Not authorized to access these rescue requests"
+    }
+    ```
+
+#### Get Rescue Request Timeline
+
+-   **Endpoint**: `GET /api/rescue/requests/:id/timeline`
+-   **Description**: Get the timeline of a specific rescue request
+-   **Headers**:
+    ```
+    Authorization: Bearer <user_token>
+    ```
+-   **Success Response**: Status 200
+    ```json
+    {
+        "success": true,
+        "data": {
+            "id": "request_id_1",
+            "status": "in_progress",
+            "animalType": "Dog",
+            "assignedTo": {
+                "ngo": {
+                    "_id": "67890",
+                    "name": "Animal Welfare NGO"
+                },
+                "volunteer": {
+                    "_id": "12345",
+                    "name": "Volunteer Name"
+                },
+                "assignedAt": "2023-04-01T12:30:00.000Z"
+            },
+            "timeline": [
+                {
+                    "status": "request_received",
+                    "timestamp": "2023-04-01T10:00:00.000Z",
+                    "notes": "Rescue request received"
+                },
+                {
+                    "status": "ngo_assigned",
+                    "timestamp": "2023-04-01T12:30:00.000Z",
+                    "notes": "Request accepted by NGO: Animal Welfare NGO"
+                },
+                {
+                    "status": "volunteer_assigned",
+                    "timestamp": "2023-04-01T13:00:00.000Z",
+                    "notes": "Volunteer assigned to the rescue"
+                },
+                {
+                    "status": "volunteer_dispatched",
+                    "timestamp": "2023-04-01T13:30:00.000Z",
+                    "notes": "Volunteer dispatched to the location"
+                },
+                {
+                    "status": "reached_location",
+                    "timestamp": "2023-04-01T14:30:00.000Z",
+                    "notes": "Arrived at the location, searching for the animal"
+                }
+            ]
+        }
+    }
+    ```
+-   **Error Response**: Status 401/403/404
+    ```json
+    {
+        "success": false,
+        "message": "Not authorized to view this rescue request"
+    }
+    ```
+    OR
+    ```json
+    {
+        "success": false,
+        "message": "Rescue request not found"
+    }
+    ```
+
+## Testing the Mobile API Endpoints with Postman
+
+### 1. Volunteer API Tests
+
+1. **Login as Volunteer**:
+   - Use the volunteer login endpoint with credentials provided by the NGO
+   - Store the token for subsequent requests
+
+2. **Get Volunteer Profile**:
+   - Use the token to fetch the volunteer profile
+   - Verify active status and assigned NGO
+
+3. **View Assigned Missions**:
+   - Fetch all rescue missions assigned to the volunteer
+   - Note mission IDs for status updates
+
+4. **Update Mission Status**:
+   - Choose a mission and update its status
+   - Follow the rescue workflow: dispatch → reached location → animal rescued → returning → treatment
+
+5. **Add Notes to Mission**:
+   - Add detailed observations about the rescue
+
+### 2. User API Tests
+
+1. **Login as User**:
+   - Use the regular user login endpoint
+   - Store the token for subsequent requests
+
+2. **View User's Rescue Requests**:
+   - Fetch all rescue requests made by the user
+   - Check status and assignee information
+
+3. **View Rescue Timeline**:
+   - Choose a specific rescue request
+   - Fetch and monitor its timeline for updates
+
+### 3. Complete Mobile Workflow Test
+
+Create a test collection in Postman to test the complete mobile workflow:
+
+1. User creates rescue request
+2. Admin/NGO assigns it to an NGO
+3. NGO assigns a volunteer
+4. Volunteer logs in and checks missions
+5. Volunteer updates mission status through the different stages
+6. User monitors rescue timeline
+7. Volunteer completes the rescue
 
 ## Testing the APIs with Postman
 
@@ -1046,7 +1401,7 @@ curl -X POST http://localhost:5000/api/ngo/register \
 ```bash
 curl -X POST http://localhost:5000/api/admin/login \
   -H "Content-Type: application/json" \
-  -d '{
+  -d '{ 
     "email": "admin@pashurakshak.org",
     "password": "admin123"
   }'
